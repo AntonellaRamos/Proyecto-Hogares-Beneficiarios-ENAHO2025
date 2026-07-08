@@ -14,3 +14,20 @@ library(tidyverse)
 library(readr)
 library(arrow)
 renv::snapshot()
+
+# 2. Importar datos ----
+# Módulo 200: Características de los miembros del hogar
+m200 <- read.csv(
+  "01_datos/originales/enaho_m200_2025.csv",
+  fileEncoding = "latin1"
+)
+# Módulo 700: Programas Sociales (participación en asistencia alimentaria)
+m700 <- read.csv(
+  "01_datos/originales/enaho_m700_2025.csv",
+  fileEncoding = "latin1"
+)
+# Módulo 130: Inseguridad Alimentaria
+m130 <- read.csv(
+  "01_datos/originales/enaho_m130_2025.csv",
+  fileEncoding = "latin1"
+)
