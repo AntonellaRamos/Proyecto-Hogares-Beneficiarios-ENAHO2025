@@ -17,3 +17,7 @@ library(janitor)
 library(naniar)
 renv::snapshot()
 
+# 2. Cargar llave y base integrada ----
+keys_hogar <- c("CONGLOME", "VIVIENDA", "HOGAR")
+
+enaho_2025 <- read_parquet("01_datos/procesados/enaho_2025_v1.parquet")
