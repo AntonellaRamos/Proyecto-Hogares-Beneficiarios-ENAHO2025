@@ -33,3 +33,17 @@ m130 <- read_csv2(
   "01_datos/originales/enaho_m130_2025.csv",
   locale = locale(encoding = "Latin1")
 )
+
+# 3. Unión de bases ----
+# La llave keys_hogar identifica de forma única a cada hogar en la ENAHO.
+keys_hogar <- c("CONGLOME", "VIVIENDA", "HOGAR")
+
+# Se utiliza left_join tomando el Módulo 200 como base de referencia,
+# para conservar todos los hogares aunque no tengan coincidencia en
+# los módulos 700 o 130. Esto permite detectar casos sin registro.
+enaho_2025 <- m200 %>%
+  left_join(m700, by = keys_hogar) %>%
+  left_join(m130, by = keys_hogar)
+
+# Verificación: la N resultante debe ser igual a la del Módulo 200
+nrow(enaho_2025) == nrow(m200)
