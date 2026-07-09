@@ -54,6 +54,9 @@ enaho_seleccion <- enaho_2025 %>%
     edad_jefe   = P208A,
     ecivil_jefe = P209.x,
     
+    # Factor de expansión (Módulo 700)
+    factor07 = FACTOR07.x,
+    
     # Módulo 700: programas de asistencia alimentaria
     prog_vaso_leche   = `P701$01`,
     prog_comedor      = `P701$02`,
