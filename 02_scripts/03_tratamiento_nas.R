@@ -12,3 +12,8 @@
 # 1. Cargar librerías ----
 library(tidyverse)
 library(arrow)
+
+# 2. Cargar llave y base acondicionada ----
+keys_hogar <- c("conglome", "vivienda", "hogar")
+
+enaho_2025 <- read_parquet("01_datos/procesados/enaho_2025_v2.parquet")
