@@ -79,3 +79,8 @@ enaho_seleccion <- enaho_2025 %>%
     fies_7 = P130_7,
     fies_8 = P130_8
   )
+
+# 5. Inspección inicial ----
+dim(enaho_seleccion)
+names(enaho_seleccion)
+glimpse(enaho_seleccion)
