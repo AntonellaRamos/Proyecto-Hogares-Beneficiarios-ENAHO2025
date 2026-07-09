@@ -9,3 +9,11 @@
 # Autor: Antonella Ramos
 # Fecha: 08/07/2026
 # =========================================================
+
+# 1. Cargar librerías ----
+library(tidyverse)
+library(arrow)
+library(janitor)
+library(naniar)
+renv::snapshot()
+
