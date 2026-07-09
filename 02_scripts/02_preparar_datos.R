@@ -212,3 +212,8 @@ reporte_nas %>%
     )
   ) %>%
   gtsave("03_outputs/acondicionar_reporte_nas.html")
+
+# 7. Exportar base acondicionada ----
+# Se exporta la base seleccionada y renombrada como segunda versión
+# del dataset procesado, lista para el tratamiento de NAs.
+write_parquet(enaho_seleccion, "01_datos/procesados/enaho_2025_v2.parquet")
