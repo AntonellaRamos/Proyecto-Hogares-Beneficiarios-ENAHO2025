@@ -74,6 +74,10 @@ El archivo descargado del INEI incluye documentos técnicos de referencia (ficha
 - Ejemplo: `enaho_2025_v1.parquet`
 - Ubicación: `01_datos/procesados/`
 
+**Outputs**:  Nombrados con prefijo que indica la dimensión del procesamiento seguido del tipo de contenido.
+- Ejemplo: `acondicionar_grafico_nas.png`
+- Ubicación: `03_outputs`
+
 ### Control de versiones 
 El proyecto está versionado con Git y alojado públicamente en GitHub. 
 Cada commit corresponde a una unidad lógica de trabajo con un mensaje descriptivo del cambio realizado.
@@ -84,6 +88,9 @@ El proyecto está desarrollado utilizando R (versión 4.5.1), con las siguientes
 - `tidyverse`: Manipulación, limpieza, joins, transformación
 - `readr`: Importar datos CSV
 - `arrow`: Guardar y leer datos Parquet
+- `janitor`: Limpieza de nombres de columnas
+- `naniar`: Diagnóstico y visualización de valores perdidos
+- `gt`: Generación de tablas presentables en formato HTML
 - `renv`: Control de versiones de librerías
 
 Los paquetes utilizados y sus versiones exactas están registrados en `renv.lock`, generado con `renv::init()`. Para restaurar el ambiente en otra máquina basta ejecutar `renv::restore()`.
