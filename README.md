@@ -50,3 +50,40 @@ El proyecto procesa el perfil sociodemográfico de los hogares a partir de las s
 ### Archivos técnicos consultados
 El archivo descargado del INEI incluye documentos técnicos de referencia (ficha técnica, diccionario de variables y cuestionario). Estos archivos fueron consultados durante el procesamiento pero no se incluyen en el repositorio por no ser parte del flujo de datos.
 
+---
+
+## 2. GESTIONAR
+### Convenciones de nombres
+**Scripts**: Numerados por orden de ejecución con prefijo de dos dígitos, seguidos de un nombre descriptivo del propósito en minúsculas y con  guiones bajos. El número indica el orden en que deben ejecutarse.
+- Ejemplo: `00_creacion_carpetas_enlace_github.R`
+
+**Datos originales**: Los nombres de archivo indicados en la sección **EXTRAER** corresponden a la denominación original del INEI tal como se descargaron del portal de microdatos. Para facilitar la trazabilidad dentro del proyecto, los archivos fueron renombrados localmente siguiendo la convención `enaho_mNNN_YYYY.csv`.
+- **Módulo 200: Características de los miembros del hogar**
+   - Nombre original INEI: `Enaho01-2025-200.csv`
+   - Nombre en el proyecto: `enaho_m200_2025.csv` 
+
+- **Módulo 700: Programas Sociales (Miembros del Hogar)**
+   - Nombre original INEI: `Enaho01-2025-700.csv` 
+   - Nombre en el proyecto: `enaho_m700_2025.csv` 
+
+- **Módulo 130: Inseguridad Alimentaria**
+   - Nombre original INEI: `Enaho01-2025-130.csv`
+   - Nombre en el proyecto: `enaho_m130_2025.csv`
+
+**Datos procesados**: Tras la unión de módulos en `01_carga_union_modulos.R`, la base integrada se exporta en formato `.parquet`. El sufijo de versión (`_v1`, `_v2`, etc.) se incrementa cada vez que una transformación sustantiva  del dataset, como la creación de nuevas variables o recodificaciones, genera una nueva versión de la base procesada.
+- Ejemplo: `enaho_2025_v1.parquet`
+- Ubicación: `01_datos/procesados/`
+
+### Control de versiones 
+El proyecto está versionado con Git y alojado públicamente en GitHub. 
+Cada commit corresponde a una unidad lógica de trabajo con un mensaje descriptivo del cambio realizado.
+
+### Librerías utilizadas
+El proyecto está desarrollado utilizando R (versión 4.5.1), con las siguientes librerías:
+
+- `tidyverse`: Manipulación, limpieza, joins, transformación
+- `readr`: Importar datos CSV
+- `arrow`: Guardar y leer datos Parquet
+- `renv`: Control de versiones de librerías
+
+Los paquetes utilizados y sus versiones exactas están registrados en `renv.lock`, generado con `renv::init()`. Para restaurar el ambiente en otra máquina basta ejecutar `renv::restore()`.
