@@ -17,17 +17,19 @@ renv::snapshot()
 
 # 2. Importar datos ----
 # Módulo 200: Características de los miembros del hogar
-m200 <- read.csv(
+m200 <- read_csv2(
   "01_datos/originales/enaho_m200_2025.csv",
-  fileEncoding = "latin1"
+  locale = locale(encoding = "Latin1")
 )
+
 # Módulo 700: Programas Sociales (participación en asistencia alimentaria)
-m700 <- read.csv(
+m700 <- read_csv2(
   "01_datos/originales/enaho_m700_2025.csv",
-  fileEncoding = "latin1"
+  locale = locale(encoding = "Latin1")
 )
+
 # Módulo 130: Inseguridad Alimentaria
-m130 <- read.csv(
+m130 <- read_csv2(
   "01_datos/originales/enaho_m130_2025.csv",
-  fileEncoding = "latin1"
+  locale = locale(encoding = "Latin1")
 )
