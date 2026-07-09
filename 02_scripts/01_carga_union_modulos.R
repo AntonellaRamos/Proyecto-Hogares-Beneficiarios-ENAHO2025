@@ -47,3 +47,6 @@ enaho_2025 <- m200 %>%
 
 # Verificación: la N resultante debe ser igual a la del Módulo 200
 nrow(enaho_2025) == nrow(m200)
+
+# 4. Exportar base de datos creada ----
+write_parquet(enaho_2025, "01_datos/procesados/enaho_2025_v1.parquet")
