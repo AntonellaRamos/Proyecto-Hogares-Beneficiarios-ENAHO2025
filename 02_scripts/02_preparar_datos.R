@@ -15,6 +15,7 @@ library(tidyverse)
 library(arrow)
 library(janitor)
 library(naniar)
+library(gt)
 
 # 2. Cargar llave y base integrada ----
 keys_hogar <- c("CONGLOME", "VIVIENDA", "HOGAR")
