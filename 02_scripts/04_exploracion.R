@@ -649,3 +649,151 @@ tabla_fies_si %>%
   gtsave(
     "03_outputs/explorar_tabla_fies.html"
   )
+
+# 7. Exploración bivariada ----
+
+# Beneficiario de algún programa vs. respuesta afirmativa en fies_1
+
+# Recodifica la variable de no recepción del programa para identificar hogares beneficiarios (Sí/No)
+enaho_biv <- enaho_2025 %>%
+  mutate(
+    beneficiario = ifelse(prog_no_recibio == "No", "Sí", "No"),
+    beneficiario = factor(beneficiario, levels = c("Sí", "No"))
+  )
+
+# Tabla de frecuencias bivariada entre beneficiario y FIES
+tabla_fies_biv <- enaho_biv %>%
+  select(beneficiario, starts_with("fies_")) %>%
+  pivot_longer(
+    cols = starts_with("fies_"),
+    names_to = "item_fies",
+    values_to = "respuesta"
+  ) %>%
+  filter(
+    !is.na(respuesta),
+    !is.na(beneficiario)
+  ) %>%
+  group_by(item_fies, beneficiario) %>%
+  summarise(
+    porcentaje = round(mean(respuesta == "Sí") * 100, 1),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    item_fies = recode(item_fies, !!!etiquetas_fies)
+  )
+
+# Tabla gt
+tabla_fies_biv %>%
+  pivot_wider(
+    names_from = beneficiario,
+    values_from = porcentaje
+  ) %>%
+  rename(
+    "Ítem FIES" = item_fies,
+    "Beneficiario" = Sí,
+    "No beneficiario" = No
+  ) %>%
+  gt() %>%
+  tab_header(
+    title = "Experiencias de inseguridad alimentaria según condición de beneficiario",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold"),
+      cell_fill(color = "lightgray")
+    ),
+    locations = cells_column_labels()
+  ) %>%
+  cols_label(
+    `Ítem FIES` = "Experiencia de inseguridad alimentaria",
+    Beneficiario = "Beneficiario (%)",
+    `No beneficiario` = "No beneficiario (%)"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_source_note(
+    source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
+  ) %>%
+  tab_source_note(
+    source_note = "Nota: La tabla presenta el porcentaje de hogares que respondió afirmativamente a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según condición de beneficiario. Se excluyeron los valores perdidos (NA)."
+  ) %>%
+  gtsave(
+    "03_outputs/explorar_tabla_biv_beneficiario_fies8.html"
+  )
+
+# Gráfico de barras
+grafico_biv_fies <- tabla_fies_biv %>%
+  mutate(
+    item_fies = fct_reorder(item_fies, porcentaje)
+  ) %>%
+  ggplot(aes(
+    x = item_fies,
+    y = porcentaje,
+    fill = beneficiario
+  )) +
+  geom_col(
+    position = "dodge"
+  ) +
+  geom_text(
+    aes(label = paste0(porcentaje, "%")),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2,
+    size = 3.5
+  ) +
+  coord_flip() +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.10))
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Sí" = "#457B9D",
+      "No" = "#A8DADC"
+    )
+  ) +
+  labs(
+    title = "Experiencias de inseguridad alimentaria según condición de beneficiario",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
+    x = "Ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES)",
+    y = "Porcentaje de hogares (%)",
+    fill = "Beneficiario de programa",
+    caption = paste0(
+      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
+      "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES),\n",
+      "según condición de beneficiario. Los porcentajes se calcularon sobre las respuestas válidas de cada ítem. Se excluyeron los valores perdidos (NA)."
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 10
+    ),
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9
+    ),
+    legend.position = "bottom"
+  )
+
+print(grafico_biv_fies)
+
+ggsave(
+  "03_outputs/explorar_grafico_biv_beneficiario_fies.png",
+  plot = grafico_biv_fies,
+  width = 12,
+  height = 8,
+  dpi = 300,
+  bg = "white"
+)
