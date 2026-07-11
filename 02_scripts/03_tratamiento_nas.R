@@ -123,3 +123,54 @@ print(diagnostico_solapamiento)
 # Los NAs en programas y fies son problemas de ausencia
 # independientes, no un solo bloque de hogares sin información.
 # Total de hogares afectados: 1,379 + 118 + 891 = 2,388 hogares únicos.
+
+# 4. Tratamiento de valores perdidos ----
+# ------------------------------------------------------------------------------
+# CASO 1: Variables de programas de asistencia alimentaria
+# Porcentaje de NAs: 6.74% (2,270 hogares)
+# Diagnóstico: Los NAs aparecen de forma consistente en todas las variables
+# de programas, lo que indica ausencia de información a nivel de módulo,
+# no omisiones en preguntas individuales. Se verificó que los hogares
+# afectados sí tienen informante registrado en P700I, descartando ausencia
+# estructural. Los NAs se concentran en el dominio 8 (Lima Metropolitana),
+# donde alcanzan el 38.8% frente a menos del 1% en otros dominios.
+# Esto indica que la ausencia depende de una variable observable (dominio),
+# lo que corresponde a un patrón MAR (Missing at Random).
+# Estrategia: Conservación de NAs sin imputación ni eliminación.
+# El valor 0 ya representa explícitamente la no recepción del programa,
+# por lo que un NA no es equivalente a 0. La exclusión de estos hogares ocurrirá
+# naturalmente al construir variables de beneficiario en una etapa posterior.
+# ------------------------------------------------------------------------------
+
+# Verificación: los NAs se conservan
+colSums(is.na(enaho_2025[, grep("^prog_", names(enaho_2025))]))
+
+# ------------------------------------------------------------------------------
+# CASO 2: Variables de inseguridad alimentaria (fies)
+# Porcentaje de NAs: 2.99% (1,009 hogares)
+# Diagnóstico: Los NAs aparecen de forma consistente en las 8 variables
+# FIES, lo que indica ausencia de información a nivel de módulo.
+# Se concentran en el dominio 8 (Lima Metropolitana), donde alcanzan
+# el 16.1% frente a menos del 5% en otros dominios. Lo que corresponde a 
+# un patrón MAR (Missing at Random).
+# Adicionalmente, se identificaron valores 3 (No sabe) y 4 (No responde)
+# en todas las variables FIES. Estos códigos no son respuestas válidas
+# para la escala FIES, que solo acepta Sí (1) o No (2).
+# Estrategia: Conversión de valores 3 y 4 a NA, seguida de conservación
+# de NAs sin eliminación. No es posible determinar el nivel de inseguridad
+# alimentaria de un hogar con respuestas incompletas. La exclusión de estos
+# hogares ocurrirá naturalmente al construir el índice FIES en una etapa
+# posterior. 
+# ------------------------------------------------------------------------------
+
+# Convertir valores 3 y 4 a NA
+enaho_tratada <- enaho_2025 %>%
+  mutate(
+    across(
+      fies_1:fies_8,
+      ~ na_if(na_if(., 3), 4)
+    )
+  )
+
+# Verificar conversión
+lapply(enaho_tratada[paste0("fies_", 1:8)], table, useNA = "ifany")
