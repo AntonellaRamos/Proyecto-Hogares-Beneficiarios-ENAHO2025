@@ -797,3 +797,8 @@ ggsave(
   dpi = 300,
   bg = "white"
 )
+
+# 7. Exportar base con variables transformadas ----
+# Se exporta la con variables transformadas y renombrada como cuarta versión
+# del dataset procesado.
+write_parquet(enaho_2025, "01_datos/procesados/enaho_2025_v4.parquet")
