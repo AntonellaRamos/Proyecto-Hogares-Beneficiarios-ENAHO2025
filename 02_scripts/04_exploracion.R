@@ -220,7 +220,7 @@ print(grafico_edad_hist)
 ggsave(
   "03_outputs/explorar_histograma_edad_jefe.png",
   plot = grafico_edad_hist,
-  width = 8,
+  width = 10,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -394,3 +394,258 @@ ggsave(
   dpi = 300,
   bg = "white"
 )
+
+# 5. Programas de asistencia alimentaria ----
+
+# 5.1 Frecuencia de cada programa ----
+tabla_programas <- enaho_2025 %>%
+  summarise(
+    across(
+      c(prog_vaso_leche, prog_comedor, prog_desayuno_esc,
+        prog_almuerzo_esc, prog_cuna_mas, prog_canasta,
+        prog_otro1, prog_otro2, prog_otro3),
+      ~ sum(. == "Sí", na.rm = TRUE)
+    )
+  ) %>%
+  pivot_longer(everything(),
+               names_to  = "programa",
+               values_to = "n") %>%
+  mutate(
+    porcentaje = round(n / nrow(enaho_2025) * 100, 1),
+    programa = recode(programa,
+                      "prog_vaso_leche"   = "Programa Vaso de Leche",
+                      "prog_comedor"      = "Comedor Popular",
+                      "prog_desayuno_esc" = "Qali Warma (desayuno)",
+                      "prog_almuerzo_esc" = "Qali Warma (almuerzo)",
+                      "prog_cuna_mas"     = "Cuna Más",
+                      "prog_canasta"      = "Canasta de alimentos",
+                      "prog_otro1"        = "Otro programa 1",
+                      "prog_otro2"        = "Otro programa 2",
+                      "prog_otro3"        = "Otro programa 3"
+    )
+  ) %>%
+  arrange(desc(n))
+
+# Gráfico de barras
+grafico_programas <- tabla_programas %>%
+  mutate(
+    programa = fct_reorder(programa, n)
+  ) %>%
+  ggplot(aes(x = programa, y = porcentaje)) +
+  geom_col(
+    fill = "#2A9D8F"
+  ) +
+  geom_text(
+    aes(label = paste0(porcentaje, "%")),
+    hjust = -0.2,
+    size = 3.5
+  ) +
+  coord_flip() +
+  labs(
+    title = "Hogares beneficiarios por programa de asistencia alimentaria",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
+    x = "Programa de asistencia alimentaria",
+    y = "Porcentaje de hogares (%)",
+    caption = paste0(
+      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
+      "Nota: La frecuencia representa el número y proporción de hogares que reportan recibir cada programa de asistencia alimentaria (n = ",
+      nrow(enaho_2025),
+      " hogares).\nUn hogar puede registrar más de un programa."
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 10
+    ),
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9
+    )
+  )
+
+print(grafico_programas)
+
+ggsave(
+  "03_outputs/explorar_grafico_programas.png",
+  plot = grafico_programas,
+  width = 12,
+  height = 6,
+  dpi = 300,
+  bg = "white"
+)
+
+# Tabla gt
+tabla_programas %>%
+  rename(
+    "Programa de asistencia alimentaria" = programa,
+    "Número de hogares" = n,
+    "Porcentaje (%)" = porcentaje
+  ) %>%
+  gt() %>%
+  tab_header(
+    title = "Frecuencia de hogares según programa de asistencia alimentaria",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold"),
+      cell_fill(color = "lightgray")
+    ),
+    locations = cells_column_labels()
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_source_note(
+    source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
+  ) %>%
+  tab_source_note(
+    source_note = paste0(
+      "Nota: La frecuencia representa el número y la proporción de hogares que reportan recibir cada programa de asistencia alimentaria (n = ",
+      nrow(enaho_2025),
+      " hogares). Un hogar puede registrar más de un programa."
+    )
+  ) %>%
+  gtsave(
+    "03_outputs/explorar_tabla_programas.html"
+  )
+
+# 6. Inseguridad alimentaria (FIES) ----
+
+# Distribución de respuestas por ítem FIES
+etiquetas_fies <- c(
+  "fies_1" = "FIES 1: Preocupación por alimentos",
+  "fies_2" = "FIES 2: Alimentación saludable",
+  "fies_3" = "FIES 3: Variedad de alimentos",
+  "fies_4" = "FIES 4: Omitió comidas",
+  "fies_5" = "FIES 5: Comió menos de lo normal",
+  "fies_6" = "FIES 6: Se quedó sin alimentos",
+  "fies_7" = "FIES 7: Tuvo hambre sin comer",
+  "fies_8" = "FIES 8: Día entero sin comer"
+)
+
+# Tabla de frecuencias
+tabla_fies <- enaho_2025 %>%
+  select(starts_with("fies_")) %>%
+  pivot_longer(everything(),
+               names_to  = "item",
+               values_to = "respuesta") %>%
+  filter(!is.na(respuesta)) %>%
+  group_by(item, respuesta) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(item) %>%
+  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  ungroup() %>%
+  mutate(item = etiquetas_fies[item])
+
+# Gráfico de barras
+grafico_fies <- tabla_fies %>%
+  filter(respuesta == "Sí") %>%
+  mutate(
+    item = fct_reorder(item, porcentaje)
+  ) %>%
+  ggplot(aes(x = item, y = porcentaje)) +
+  geom_col(
+    fill = "#E76F51"
+  ) +
+  geom_text(
+    aes(label = paste0(porcentaje, "%")),
+    hjust = -0.2,
+    size = 3.5
+  ) +
+  coord_flip() +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.10))
+  ) +
+  labs(
+    title = "Porcentaje de hogares con respuesta afirmativa por ítem FIES",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
+    x = "Ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES)",
+    y = "Porcentaje de hogares (%)",
+    caption = paste0(
+      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
+      "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES).\n",
+      "Los porcentajes se calcularon sobre el total de respuestas válidas de cada ítem; se excluyeron los valores perdidos (NA)."
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 10
+    ),
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9
+    )
+  )
+
+print(grafico_fies)
+
+ggsave(
+  "03_outputs/explorar_grafico_fies.png",
+  plot = grafico_fies,
+  width = 12,
+  height = 7,
+  dpi = 300,
+  bg = "white"
+)
+
+# Tabla de frecuencias: respuestas afirmativas por ítem FIES
+tabla_fies_si <- tabla_fies %>%
+  filter(respuesta == "Sí") %>%
+  select(item, n, porcentaje)
+
+# Tabla gt
+tabla_fies_si %>%
+  rename(
+    "Ítem FIES" = item,
+    "Número de hogares" = n,
+    "Porcentaje (%)" = porcentaje
+  ) %>%
+  gt() %>%
+  tab_header(
+    title = "Porcentaje de hogares con respuesta afirmativa por ítem FIES",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold"),
+      cell_fill(color = "lightgray")
+    ),
+    locations = cells_column_labels()
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_source_note(
+    source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
+  ) %>%
+  tab_source_note(
+    source_note = "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES).\nLos porcentajes se calcularon sobre el total de respuestas válidas de cada ítem. Se excluyeron los valores perdidos (NA)."
+  ) %>%
+  gtsave(
+    "03_outputs/explorar_tabla_fies.html"
+  )
