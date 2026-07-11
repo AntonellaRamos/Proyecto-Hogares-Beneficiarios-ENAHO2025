@@ -174,3 +174,16 @@ enaho_tratada <- enaho_2025 %>%
 
 # Verificar conversión
 lapply(enaho_tratada[paste0("fies_", 1:8)], table, useNA = "ifany")
+
+# 5. Verificación del tamaño de la base ----
+# Los valores perdidos identificados en el diagnóstico se conservan
+# para su manejo explícito en etapas posteriores. Se verifica que
+# el tratamiento aplicado no haya reducido el número de hogares.
+
+resumen_n <- data.frame(
+  hogares_antes = n_antes,
+  hogares_despues = n_despues,
+  hogares_eliminados = n_antes - n_despues
+)
+
+print(resumen_n)
