@@ -8,3 +8,8 @@
 # Autor: Antonella Ramos
 # Fecha: 10/07/2026
 # =========================================================
+
+# 1. Cargar librerías ----
+library(tidyverse)
+library(arrow)
+library(gt)
