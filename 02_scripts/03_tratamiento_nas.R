@@ -187,3 +187,8 @@ resumen_n <- data.frame(
 )
 
 print(resumen_n)
+
+# 6. Exportar base tratada ----
+# Se exporta la base tratada y renombrada como tercera versión
+# del dataset procesado. 
+write_parquet(enaho_tratada, "01_datos/procesados/enaho_2025_v3.parquet")
