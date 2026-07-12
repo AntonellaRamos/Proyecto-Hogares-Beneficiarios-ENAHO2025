@@ -43,4 +43,51 @@ El objetivo de este informe es describir la distribución de las principales car
 - **Módulos utilizados**: Módulo 200 (Características de los miembros del hogar), Módulo 700 (Programas Sociales) y Módulo 130 (Inseguridad Alimentaria).
 - **Total de hogares analizados**: `r format(nrow(enaho_2025), big.mark = ",")` hogares.
 
+---
+
+# ¿Quiénes encabezan los hogares? Perfil sociodemográfico del jefe de hogar
+
+## Una mayoría masculina con presencia femenina significativa: distribución por sexo
+
+**Figura 1.**
+```{r Gráfico de barras: Distribución del sexo del jefe del hogar"}
+knitr::include_graphics("../03_outputs/explorar_grafico_sexo_jefe.png")
+```
+En los hogares beneficiarios de programas de asistencia alimentaria predomina la jefatura masculina, que representa el 63.1% de los casos. Esto indica que, dentro de la población analizada, la mayoría de hogares tiene a un hombre como jefe de hogar. Sin embargo, la participación de hogares con jefatura femenina también es relevante, ya que alcanza más de un tercio de la población analizada (36.9%). Esto demuestra que que la condición de beneficiario no se restringe a un único perfil de jefatura y que existe diversidad en la composición de los hogares atendidos.
+
+## Una población madura: distribución por edad
+
+**Tabla 1**
+```{r Tabla Descriptiva: Edad del jefe del hogar"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_edad_jefe.html")
+```
+Los hogares beneficiarios de programas de asistencia alimentaria presentan un perfil predominantemente adulto. El 75% de los jefes de hogar tiene más de 42 años, mientras que la edad promedio alcanza los 54 años. Sin embargo, la desviación estándar (DE = 15.7 años) muestra una dispersión considerable en la distribución, con edades que abarcan desde jefaturas jóvenes hasta edades avanzadas (máximo = 98 años). En conjunto, estos resultados sugieren que, aunque existe una mayor concentración de jefaturas adultas, la población beneficiaria presenta heterogeneidad en términos etarios.
+
+**Figura 2**
+```{r Histograma: Distribución de la edad del jefe del hogar"}
+knitr::include_graphics("../03_outputs/explorar_histograma_edad_jefe.png")
+```
+El histograma muestra una distribución aproximadamente simétrica y unimodal de la edad de los jefes de hogar beneficiarios, con una mayor concentración de casos alrededor de los 50-55 años. Esta forma de la distribución es consistente con la cercanía entre la media (54.2 años) y la mediana (54.0 años), lo que sugiere la ausencia de una asimetría marcada hacia alguno de los extremos. Asimismo, se observa una reducción progresiva de frecuencias hacia edades más jóvenes y mayores, aunque se mantienen casos en ambos extremos de la distribución. En conjunto, el gráfico muestra una concentración predominante en edades adultas, pero con variabilidad en la composición etaria de los hogares beneficiarios.
+
+## Entre la convivencia y la separación: estado civil del jefe de hogar
+
+**Tabla 2**
+```{r Tabla de frecuencias: Estado civil del jefe del hogar"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_ecivil_jefe.html")
+```
+En relación con el estado civil de los jefes de hogar beneficiarios, se observa que la categoría más frecuente corresponde a los convivientes (29.4%), seguida de los casados (28.0%). En conjunto, ambas categorías representan el 57.4% de los hogares, lo que indica que más de la mitad de los hogares beneficiarios tiene una jefatura asociada a una relación conyugal o de convivencia. Por otro lado, los jefes de hogar separados representan el 20.0% y los viudos el 12.5%, mostrando también una presencia relevante de hogares con otras trayectorias familiares. Finalmente, los solteros (8.7%) y divorciados (1.5%) constituyen los grupos con menor representación dentro de la población analizada.
+
+**Figura 3**
+```{r Gráfico de barras: Distribución del estado civil del jefe del hogar"}
+knitr::include_graphics("../03_outputs/explorar_grafico_ecivil_jefe.png")
+```
+El gráfico de barras muestra una distribución concentrada principalmente en las categorías de conviviente (29.4%) y casado/a (28.0%), que en conjunto representan el 57.4% de los hogares beneficiarios. Esto indica que las formas de convivencia en pareja tienen una presencia predominante dentro de la población analizada. En segundo lugar, destacan los jefes de hogar separados (20.0%) y viudos (12.5%), categorías que, aunque presentan menor frecuencia, mantienen una participación relevante. Finalmente, las categorías de soltero/a (8.7%) y divorciado/a (1.5%) tienen una menor representación, siendo esta última la menos frecuente dentro de la distribución observada.
+
+
+
+
+
+
+
+
 
