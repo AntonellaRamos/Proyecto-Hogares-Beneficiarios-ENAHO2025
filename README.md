@@ -93,10 +93,70 @@ El proyecto está desarrollado utilizando R (versión 4.5.1), con las siguientes
 - `survey`: Incorporación del diseño muestral y cálculo de estimaciones con el factor de expansión.
 - `gt`: Generación de tablas presentables en formato HTML
 - `htmltools`: Inserción de tablas HTML en el informe descriptivo.
-- `knitr`: Integración de gráficos y resultados en el informe descriptivo. 
+- `knitr`: Integración de gráficos y resultados en el informe descriptivo.
+- `rmarkdown`: Compilación de informes en HTML
+- `labelled`: Inyección de etiquetas y metadatos en variables
+- `codebook`: Generación automatizada de codebooks
+- `dataMaid`: Auditoría y reportes de calidad de datos
 - `renv`: Control de versiones de librerías
 
 Los paquetes utilizados y sus versiones exactas están registrados en `renv.lock`, generado con `renv::init()`. Para restaurar el ambiente en otra máquina basta ejecutar `renv::restore()`.
+
+### Orden de ejecución de scripts
+
+| Script | Propósito |
+|--------|-----------|
+| `00_creacion_carpetas_github.R` | Configuración del entorno, creación de carpetas y enlace con GitHub |
+| `01_carga_union_modulos.R` | Importación y merge de módulos 200, 700 y 130 |
+| `02_acondicionamiento.R` | Selección, renombrado e inspección de variables |
+| `03_tratamiento_nas.R` | Diagnóstico y tratamiento de valores perdidos |
+| `04_exploracion.R` | Conversión de tipos, estadísticas descriptivas y visualizaciones |
+| `05_informe_descriptivo.Rmd` | Informe descriptivo interpretado en HTML |
+| `06_clasificacion.R` | Recodificación de variables, índice FIES y tipologías |
+| `07_reporte_variables_recodificadas.Rmd` | Reporte que integra las tablas de las variables recodificadas y categorías derivadas construidas en HTML |
+| `08_documentar.R` | Metadatos, decisiones metodológicas y codebook final |
+
+### Estructura del directorio
+
+```
+Proyecto-Hogares-Beneficiarios-ENAHO2025/
+│
+├── 01_datos/
+│   ├── originales/              # Datos originales INEI: carpeta excluida del repositorio por peso
+│   │   ├── enaho_m130_2025.csv  # Módulo 130: Inseguridad Alimentaria
+│   │   ├── enaho_m200_2025.csv  # Módulo 200: Características de los miembros del hogar
+│   │   └── enaho_m700_2025.csv  # Módulo 700: Programas Sociales
+│   └── procesados/              # Bases procesadas en formato .parquet
+│       ├── enaho_2025_v1.parquet  # Merge de módulos 200, 700 y 130
+│       ├── enaho_2025_v2.parquet  # Variables seleccionadas y renombradas
+│       ├── enaho_2025_v3.parquet  # NAs tratados
+│       ├── enaho_2025_v4.parquet  # Variables guardadas antes de ponderación
+│       ├── enaho_2025_v5.parquet  # Tipos corregidos y diseño muestral definido
+│       ├── enaho_2025_v6.parquet  # Variables clasificadas y tipologías
+│       └── enaho_2025_v7_codebook.parquet  # Base con metadatos inyectados
+│
+├── 02_scripts/
+│   ├── 01_carga_union_modulos.R
+│   ├── 02_acondicionamiento.R
+│   ├── 03_tratamiento_nas.R
+│   ├── 04_exploracion.R
+│   ├── 05_informe_descriptivo.Rmd
+│   ├── 06_clasificacion.R
+│   ├── 07_reporte_variables_recodificadas.Rmd
+│   └── 08_documentar.R
+│
+├── 03_outputs/
+│   ├── acondicionar/  # Outputs del script 02 y 03 con prefijo "acondicionar_"
+│   ├── explorar/      # Outputs del script 04 y 05 con prefijo "explorar_"
+│   ├── clasificar/    # Outputs del script 06 con prefijo "clasificar_"
+│   └── documentar/    # Outputs del script 07 con prefijo "documentar_"
+│
+├── .Rprofile
+├── .gitignore         # Excluye 01_datos/originales/ del repositorio
+├── 00_creacion_carpetas_github.R
+├── Proyecto-Hogares-Beneficiarios-ENAHO2025.Rproj
+└── renv.lock
+```
 
 ---
 
@@ -144,7 +204,7 @@ Los outputs se encuentran en `03_outputs/`:
 
 ---
 
-## EXPLORAR
+## 4. EXPLORAR
 
 La exploración se realizó en dos archivos: `04_exploracion.R` (estadísticas descriptivas, visualizaciones y exploración bivariada) y `05_informe_descriptivo.Rmd` (informe interpretado en HTML). El análisis es exclusivamente descriptivo, responde a la pregunta "¿qué hay en los datos?" sin establecer relaciones causales ni contrastar hipótesis.
 
@@ -179,7 +239,7 @@ Los outputs se encuentran en `03_outputs/`:
 
 ---
 
-## CLASIFICAR
+## 5. CLASIFICAR
 
 La clasificación se realizó en dos archivos: `06_clasificacion.R` (recodificación de variables existentes, construcción de variables derivadas y definición de tipologías) y `07_reporte_variables_recodificadas.Rmd` (reporte de las variables recodificadas y categorías construidas en HTML). Las transformaciones se basan en criterios metodológicos externos (estándares INEI y metodología FAO) para garantizar comparabilidad.
 
