@@ -28,7 +28,7 @@ library(knitr)
 ```
 
 ```{r Cargar base de datos, include=FALSE}
-enaho_2025 <- read_parquet("../01_datos/procesados/enaho_2025_v4.parquet")
+enaho_2025 <- read_parquet("../01_datos/procesados/enaho_2025_v5.parquet")
 ```
 
 # Introducción
@@ -36,12 +36,16 @@ Este informe presenta los resultados del análisis exploratorio de datos sobre e
 
 El objetivo de este informe es describir la distribución de las principales características sociodemográficas de los hogares beneficiarios y explorar el comportamiento de las variables de interés. En consecuencia, el informe tiene un carácter exclusivamente descriptivo y no busca establecer relaciones causales.
 
+---
+
 # Ficha técnica
 - **Fuente de datos**: Encuesta Nacional de Hogares (ENAHO), INEI, 2025. 
 - **Periodo**: Anual (enero-diciembre).
 - **Unidad de análisis**: Hogar, representado por el jefe de hogar.
 - **Módulos utilizados**: Módulo 200 (Características de los miembros del hogar), Módulo 700 (Programas Sociales) y Módulo 130 (Inseguridad Alimentaria).
-- **Total de hogares analizados**: `r format(nrow(enaho_2025), big.mark = ",")` hogares.
+- **Diseño muestral**: Las estimaciones descriptivas y bivariadas incorporan el factor de expansión de la ENAHO 2025 para obtener resultados representativos de los hogares del país.
+- **Hogares en la muestra analizada**: `r format(nrow(enaho_2025), big.mark = ",")` hogares.
+- **Hogares representados estimados**: `r format(round(sum(enaho_2025$factor07, na.rm = TRUE)), big.mark = ",")` hogares.
 
 ---
 
@@ -50,10 +54,10 @@ El objetivo de este informe es describir la distribución de las principales car
 ## Una mayoría masculina con presencia femenina significativa: distribución por sexo
 
 **Figura 1.**
-```{r Gráfico de barras: Distribución del sexo del jefe del hogar"}
+```{r Gráfico de barras: Distribución de hogares según sexo del jefe del hogar"}
 knitr::include_graphics("../03_outputs/explorar_grafico_sexo_jefe.png")
 ```
-En los hogares beneficiarios de programas de asistencia alimentaria predomina la jefatura masculina, que representa el 63.1% de los casos. Esto indica que, dentro de la población analizada, la mayoría de hogares tiene a un hombre como jefe de hogar. Sin embargo, la participación de hogares con jefatura femenina también es relevante, ya que alcanza más de un tercio de la población analizada (36.9%). Esto demuestra que que la condición de beneficiario no se restringe a un único perfil de jefatura y que existe diversidad en la composición de los hogares atendidos.
+En los hogares beneficiarios de programas de asistencia alimentaria predomina la jefatura masculina, que representa el 61.3% de los casos. Esto indica que, dentro de la población analizada, la mayoría de hogares tiene a un hombre como jefe de hogar. Sin embargo, la participación de hogares con jefatura femenina también es relevante, ya que alcanza el 38.7% de los hogares beneficiarios estimados. Esto evidencia que la condición de beneficiario no se restringe a un único perfil de jefatura y que existe diversidad en la composición de los hogares atendidos.
 
 ## Una población madura: distribución por edad
 
@@ -61,27 +65,45 @@ En los hogares beneficiarios de programas de asistencia alimentaria predomina la
 ```{r Tabla Descriptiva: Edad del jefe del hogar"}
 htmltools::includeHTML("../03_outputs/explorar_tabla_edad_jefe.html")
 ```
-Los hogares beneficiarios de programas de asistencia alimentaria presentan un perfil predominantemente adulto. El 75% de los jefes de hogar tiene más de 42 años, mientras que la edad promedio alcanza los 54 años. Sin embargo, la desviación estándar (DE = 15.7 años) muestra una dispersión considerable en la distribución, con edades que abarcan desde jefaturas jóvenes hasta edades avanzadas (máximo = 98 años). En conjunto, estos resultados sugieren que, aunque existe una mayor concentración de jefaturas adultas, la población beneficiaria presenta heterogeneidad en términos etarios.
+Los hogares beneficiarios de programas de asistencia alimentaria presentan un perfil predominantemente adulto. El primer cuartil indica que el 75% de los jefes de hogar tiene 42 años o más, mientras que la edad promedio alcanza los 54.2 años. Sin embargo, la desviación estándar (DE = 15.5 años) muestra una dispersión considerable en la distribución, con edades que abarcan desde jefaturas jóvenes hasta edades avanzadas (mínimo = 16 años, máximo = 98 años). En conjunto, estos resultados sugieren que, aunque existe una mayor concentración de jefaturas adultas, la población estimada de hogares beneficiarios presenta heterogeneidad en términos etarios.
 
 **Figura 2**
 ```{r Histograma: Distribución de la edad del jefe del hogar"}
 knitr::include_graphics("../03_outputs/explorar_histograma_edad_jefe.png")
 ```
-El histograma muestra una distribución aproximadamente simétrica y unimodal de la edad de los jefes de hogar beneficiarios, con una mayor concentración de casos alrededor de los 50-55 años. Esta forma de la distribución es consistente con la cercanía entre la media (54.2 años) y la mediana (54.0 años), lo que sugiere la ausencia de una asimetría marcada hacia alguno de los extremos. Asimismo, se observa una reducción progresiva de frecuencias hacia edades más jóvenes y mayores, aunque se mantienen casos en ambos extremos de la distribución. En conjunto, el gráfico muestra una concentración predominante en edades adultas, pero con variabilidad en la composición etaria de los hogares beneficiarios.
+El histograma muestra una distribución aproximadamente simétrica y unimodal de la edad de los jefes de hogar beneficiarios, con una mayor concentración de hogares representados alrededor de los 50 y 55 años. La cercanía entre la media y la mediana evidencia una distribución sin una marcada concentración hacia edades extremas. Asimismo, se observa una reducción progresiva de hogares hacia las edades más jóvenes y avanzadas, aunque existe representación en todo el rango etario. En conjunto, el gráfico muestra una mayor presencia de jefaturas adultas, manteniendo heterogeneidad en la composición etaria de los hogares beneficiarios.
 
 ## Entre la convivencia y la separación: estado civil del jefe de hogar
 
 **Tabla 2**
-```{r Tabla de frecuencias: Estado civil del jefe del hogar"}
+```{r Tabla de frecuencias: Distribución de hogares según estado civil del jefe del hogar"}
 htmltools::includeHTML("../03_outputs/explorar_tabla_ecivil_jefe.html")
 ```
-En relación con el estado civil de los jefes de hogar beneficiarios, se observa que la categoría más frecuente corresponde a los convivientes (29.4%), seguida de los casados (28.0%). En conjunto, ambas categorías representan el 57.4% de los hogares, lo que indica que más de la mitad de los hogares beneficiarios tiene una jefatura asociada a una relación conyugal o de convivencia. Por otro lado, los jefes de hogar separados representan el 20.0% y los viudos el 12.5%, mostrando también una presencia relevante de hogares con otras trayectorias familiares. Finalmente, los solteros (8.7%) y divorciados (1.5%) constituyen los grupos con menor representación dentro de la población analizada.
+En relación con el estado civil de los jefes de hogar beneficiarios, se observa que la categoría más frecuente corresponde a los convivientes (29.0%), seguida de los casados (27.6%). En conjunto, ambas categorías representan el 56.6% de los hogares beneficiarios estimados, lo que indica que más de la mitad de los hogares presenta una jefatura asociada a una relación conyugal o de convivencia. Por otro lado, los jefes de hogar separados representan el 20.2% y los viudos el 12.3%, mostrando también una presencia relevante de hogares con distintas trayectorias familiares. Finalmente, los solteros (9.4%) y divorciados (1.5%) constituyen los grupos con menor representación dentro de la población estimada de hogares beneficiarios.
 
 **Figura 3**
-```{r Gráfico de barras: Distribución del estado civil del jefe del hogar"}
+```{r Gráfico de barras: Distribución de hogares según el estado civil del jefe del hogar"}
 knitr::include_graphics("../03_outputs/explorar_grafico_ecivil_jefe.png")
 ```
-El gráfico de barras muestra una distribución concentrada principalmente en las categorías de conviviente (29.4%) y casado/a (28.0%), que en conjunto representan el 57.4% de los hogares beneficiarios. Esto indica que las formas de convivencia en pareja tienen una presencia predominante dentro de la población analizada. En segundo lugar, destacan los jefes de hogar separados (20.0%) y viudos (12.5%), categorías que, aunque presentan menor frecuencia, mantienen una participación relevante. Finalmente, las categorías de soltero/a (8.7%) y divorciado/a (1.5%) tienen una menor representación, siendo esta última la menos frecuente dentro de la distribución observada.
+El gráfico de barras evidencia una concentración de los hogares beneficiarios en las categorías asociadas a una unión de pareja, principalmente convivientes y casados/as. En conjunto, estas categorías agrupan a más de la mitad de los hogares representados, mientras que las categorías de separados/as y viudos/as también presentan una presencia relevante dentro de la distribución. En contraste, los hogares con jefes solteros/as o divorciados/as muestran una menor participación. En general, la distribución refleja heterogeneidad en las trayectorias familiares de los hogares beneficiarios.
+
+## Un país diverso: distribución por dominio geográfico
+
+**Tabla 3**
+```{r Tabla de frecuencias: Distribución de hogares según dominio geográfico"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_dominio.html")
+```
+La distribución estimada de los hogares beneficiarios de programas de asistencia alimentaria muestra una concentración importante en Lima Metropolitana, que representa el 32.3% del total estimado de hogares beneficiarios (aproximadamente 3.5 millones de hogares). Le siguen la Sierra Sur (14.6%), la Costa Norte (14.0%) y la Sierra Centro (12.7%), que en conjunto concentran el 41.3% de los hogares beneficiarios representados. Por otro lado, la Selva representa el 11.7% de los hogares estimados, mientras que la Costa Sur registra la menor participación relativa (2.2%). En conjunto, la distribución evidencia que los hogares beneficiarios se encuentran representados en todos los dominios geográficos del país, aunque con una mayor concentración en Lima Metropolitana y en los dominios andinos del sur y centro.
+
+**Figura 4**
+```{r Gráfico de barras: Distribución de hogares según dominio geográfico"}
+knitr::include_graphics("../03_outputs/explorar_grafico_dominio.png")
+```
+El análisis territorial evidencia una concentración de los hogares beneficiarios estimados en Lima Metropolitana y en los dominios de la Sierra sur, Costa norte y Sierra centro, que en conjunto reúnen una proporción importante de la cobertura representada. Aunque los hogares beneficiarios se distribuyen en todos los dominios geográficos del país, la distribución muestra una mayor presencia en zonas urbanas y en algunos dominios andinos, reflejando diferencias territoriales en la composición de los hogares atendidos por programas de asistencia alimentaria.
+
+
+
+
 
 
 
