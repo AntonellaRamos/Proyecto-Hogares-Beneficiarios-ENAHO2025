@@ -375,6 +375,14 @@ tibble(
     style    = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
     locations = cells_column_labels()
   ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels()
+  ) %>%
   tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
   gtsave("03_outputs/clasificar_tabla_recodificaciones.html")
 
