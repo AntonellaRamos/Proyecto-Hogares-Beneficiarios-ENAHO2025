@@ -13,3 +13,6 @@ library(arrow)
 library(labelled)
 library(codebook)
 library(dataMaid)
+
+# 2. Cargar base analítica final ----
+enaho_2025 <- read_parquet("01_datos/procesados/enaho_2025_v6.parquet")
