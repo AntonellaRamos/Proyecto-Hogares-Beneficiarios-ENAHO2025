@@ -332,3 +332,180 @@ table(
 # Extra: revisión de tamaños pequeños
 table(enaho_2025$tipologia_4) %>%
 sort()
+
+# 7. Outputs: tablas de clasificación ----
+
+# 7.1 Tabla resumen de recodificaciones ----
+tibble(
+  "Variable original"  = c(
+    "edad_jefe",
+    "ecivil_jefe",
+    "prog_* (9 variables)",
+    "fies_1 ... fies_8"
+  ),
+  "Variable nueva"     = c(
+    "grupo_edad_jefe",
+    "ecivil_agrupado",
+    "beneficiario",
+    "fies_score / fies_nivel"
+  ),
+  "Tipo"               = c(
+    "Recodificación en grupos",
+    "Reagrupación de categorías",
+    "Variable compuesta dicotómica",
+    "Índice sumativo + clasificación"
+  ),
+  "Criterio"           = c(
+    "Cortes INEI: <30, 30-59, 60+",
+    "En pareja / Sin pareja / Soltero/a",
+    "Recibió al menos un programa (excluye prog_no_recibio)",
+    "Metodología FAO: 0-1 leve, 2-3 moderada, 4-8 severa"
+  )
+) %>%
+  gt() %>%
+  tab_header(
+    title    = "Variables recodificadas y construidas para la caracterización del hogar",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style    = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style    = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
+  gtsave("03_outputs/clasificar_tabla_recodificaciones.html")
+
+# 7.2 Distribución tipología 1 ----
+enaho_2025 %>%
+  filter(!is.na(tipologia_1)) %>%
+  count(tipologia_1) %>%
+  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  rename("Tipología" = tipologia_1,
+         "N" = n,
+         "Porcentaje (%)" = porcentaje) %>%
+  gt() %>%
+  tab_header(
+    title = "Distribución de casos según tipología de beneficiario e inseguridad alimentaria",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
+  tab_source_note("Nota: La distribución se calcula sobre los casos clasificados en la tipología. Se excluyen observaciones con valores faltantes en la condición de beneficiario o nivel de inseguridad alimentaria.") %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels()
+  ) %>%
+  gtsave("03_outputs/clasificar_tabla_tipologia1.html")
+
+# 7.3 Distribución tipología 2 ----
+enaho_2025 %>%
+  filter(!is.na(tipologia_2)) %>%
+  count(tipologia_2) %>%
+  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  rename("Tipología" = tipologia_2,
+         "N" = n,
+         "Porcentaje (%)" = porcentaje) %>%
+  gt() %>%
+  tab_header(
+    title    = "Distribución de casos según perfil sociodemográfico del jefe de hogar",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels()
+  ) %>%
+  tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
+  tab_source_note("Nota: La distribución se calcula sobre los casos clasificados en la tipología. Se excluyen observaciones con valores faltantes en las variables utilizadas para su construcción.") %>%
+  gtsave("03_outputs/clasificar_tabla_tipologia2.html")
+
+# 7.4 Distribución tipología 3 ----
+enaho_2025 %>%
+  filter(!is.na(tipologia_3)) %>%
+  count(tipologia_3) %>%
+  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  rename("Tipología" = tipologia_3,
+         "n" = n,
+         "Porcentaje (%)" = porcentaje) %>%
+  gt() %>%
+  tab_header(
+    title    = "Distribución de casos según cobertura territorial de programas alimentarios",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels()
+  ) %>%
+  tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
+  tab_source_note("Nota: La distribución se calcula sobre los casos clasificados en la tipología. Se excluyen observaciones con valores faltantes en dominio geográfico o condición de beneficiario.") %>%
+  gtsave("03_outputs/clasificar_tabla_tipologia3.html")
+
+# 7.5 Distribución tipología 4 ----
+enaho_2025 %>%
+  filter(!is.na(tipologia_4)) %>%
+  count(tipologia_4) %>%
+  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  rename("Tipología" = tipologia_4,
+         "n" = n,
+         "Porcentaje (%)" = porcentaje) %>%
+  gt() %>%
+  tab_header(
+    title    = "Distribución de casos según vulnerabilidad alimentaria territorial",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_title(groups = "title")
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold"), cell_fill(color = "lightgray")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body()
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels()
+  ) %>%
+  tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
+  tab_source_note("Nota:La distribución se calcula sobre los casos clasificados en la tipología. Se excluyen observaciones con valores faltantes en dominio geográfico, nivel de inseguridad alimentaria o condición de beneficiario.") %>%
+  gtsave("03_outputs/clasificar_tabla_tipologia4.html")
