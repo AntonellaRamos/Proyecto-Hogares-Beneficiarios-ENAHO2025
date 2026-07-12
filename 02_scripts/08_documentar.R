@@ -44,9 +44,6 @@ enaho_codebook_2025 <- enaho_2025 %>%
   ) %>%
   mutate(across(where(is.character), as.factor))
 
-# Exportamos como base codebook
-write_parquet(enaho_codebook_2025, "01_datos/procesados/enaho_2025_v7_codebook.parquet")
-
 # 4. Inyección de metadatos ----
 
 # A. Variables base exploradas
@@ -180,3 +177,52 @@ frecuencias_variables <- enaho_codebook_2025 %>%
     )
   ) %>%
   ungroup()
+
+# 9. Construcción del diccionario final del codebook ----
+etiquetas_variables <- tibble(
+  variable = names(enaho_codebook_2025),
+  etiqueta_descriptiva = map_chr(
+    enaho_codebook_2025,
+    ~ as.character(var_label(.x))
+  )
+)
+
+fuente_variables <- tibble(
+  variable = names(dict_metadata),
+  fuente_y_descripcion = unlist(dict_metadata)
+)
+
+
+codebook_variables <- etiquetas_variables %>%
+  left_join(
+    tipo_variables,
+    by = "variable"
+  ) %>%
+  left_join(
+    valores_variables,
+    by = "variable"
+  ) %>%
+  left_join(
+    fuente_variables,
+    by = "variable"
+  )
+
+# 10. Incorporación de frecuencias al codebook ----
+codebook_final_2025 <- codebook_variables %>%
+  left_join(
+    frecuencias_variables %>%
+      group_by(variable) %>%
+      summarise(
+        frecuencias = paste(
+          paste0(categoria, ": ", n, " (", porcentaje, "%)"),
+          collapse = " | "
+        )
+      ),
+    by = "variable"
+  )
+
+# 11. Exportación del codebook final ----
+write_csv(
+  codebook_final_2025,
+  "03_outputs/documentar/documentar_codebook_final_enaho_2025.csv"
+)
