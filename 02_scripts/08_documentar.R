@@ -7,3 +7,9 @@
 # Objetivo: Añadir metadatos a la base analítica y generar el codebook final.
 # ==============================================================================
 
+# 1. Configuración y paquetes ----
+library(tidyverse)
+library(arrow)
+library(labelled)
+library(codebook)
+library(dataMaid)
