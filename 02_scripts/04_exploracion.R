@@ -2281,3 +2281,9 @@ ggsave(
   dpi = 300,
   bg = "white"
 )
+
+# 9. Exportar base con variables transformadas y factor de expansión ----
+# Se exporta la base con variables transformadas como quinta versión
+# del dataset procesado. Esta versión incorpora el factor de expansión
+# de la ENAHO 2025 para realizar estimaciones representativas de hogares.
+write_parquet(enaho_2025, "01_datos/procesados/enaho_2025_v5.parquet")
