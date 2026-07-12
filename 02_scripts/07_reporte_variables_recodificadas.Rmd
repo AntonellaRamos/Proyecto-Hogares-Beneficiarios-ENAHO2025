@@ -23,3 +23,51 @@ knitr::opts_chunk$set(
 ```{r Cargar librerías, include=FALSE}
 library(htmltools)
 ```
+
+# Introducción
+
+Este reporte documenta las variables recodificadas y categorías derivadas construidas a partir de la ENAHO 2025. Se presentan las transformaciones realizadas y la distribución de las categorías resultantes como verificación del proceso de preparación de datos.
+
+--- 
+# Variables recodificadas y construidas para la caracterización del hogar
+
+**Tabla 1**
+```{r Tabla resumen: Variables recodificadas y construidas para la caracterización del hogar"}
+htmltools::includeHTML("../03_outputs/clasificar_tabla_recodificaciones.html")
+```
+
+
+---
+
+# Categorías derivadas construidas
+
+## Tipología 1: Beneficiario × inseguridad alimentaria
+
+**Tabla 2**
+```{r Tabla: Distribución de casos según tipología de beneficiario e inseguridad alimentaria"}
+htmltools::includeHTML("../03_outputs/clasificar_tabla_tipologia1.html")
+```
+
+## Tipología 2: Perfil sociodemográfico del jefe de hogar
+
+**Tabla 3**
+```{r Tabla: Distribución de casos según perfil sociodemográfico del jefe de hogar"}
+htmltools::includeHTML("../03_outputs/clasificar_tabla_tipologia2.html")
+```
+## Tipología 3: Cobertura territorial de programas
+
+**Tabla 4**
+```{r Tabla: Distribución de casos según cobertura territorial de programas alimentarios"}
+htmltools::includeHTML("../03_outputs/clasificar_tabla_tipologia3.html")
+```
+
+## Tipología 4: Vulnerabilidad alimentaria territorial
+
+**Tabla 5**
+```{r Tabla: Distribución de casos según vulnerabilidad alimentaria territorial"}
+htmltools::includeHTML("../03_outputs/clasificar_tabla_tipologia4.html")
+```
+
+---
+
+*Nota metodológica: Las distribuciones presentadas en este reporte corresponden a los casos observados en la muestra analizada de la ENAHO 2025 y tienen como finalidad documentar la construcción y verificación de variables recodificadas y categorías derivadas. Al no incorporar factores de expansión, los porcentajes no representan estimaciones poblacionales de los hogares del Perú.*
