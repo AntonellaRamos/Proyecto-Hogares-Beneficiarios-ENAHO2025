@@ -101,3 +101,17 @@ metadata(enaho_codebook_2025)$creator     <- "Antonella Ramos"
 # Guardamos con metadatos
 write_parquet(enaho_codebook_2025, "01_datos/procesados/enaho_2025_v7_codebook.parquet")
 
+# 6. Tipo de variable
+tipo_variables <- tibble(
+  variable = names(enaho_codebook_2025),
+  tipo_r = map_chr(enaho_codebook_2025, ~ class(.x)[1])
+) %>%
+  mutate(
+    tipo_variable = case_when(
+      tipo_r %in% c("numeric", "integer") ~ "Numérica",
+      tipo_r %in% c("factor", "ordered") ~ "Categórica",
+      tipo_r == "character" ~ "Texto",
+      TRUE ~ tipo_r
+    )
+  ) %>%
+  select(variable, tipo_variable)
