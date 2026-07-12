@@ -86,11 +86,14 @@ Cada commit corresponde a una unidad lógica de trabajo con un mensaje descripti
 El proyecto está desarrollado utilizando R (versión 4.5.1), con las siguientes librerías:
 
 - `tidyverse`: Manipulación, limpieza, joins, transformación
-- `readr`: Importar datos CSV
+- `readr`: Importar datos en formato CSV
 - `arrow`: Guardar y leer datos Parquet
-- `janitor`: Limpieza de nombres de columnas
+- `janitor`: Limpieza y estandarización de nombres de variables
 - `naniar`: Diagnóstico y visualización de valores perdidos
+- `survey`: Incorporación del diseño muestral y cálculo de estimaciones con el factor de expansión.
 - `gt`: Generación de tablas presentables en formato HTML
+- `htmltools`: Inserción de tablas HTML en el informe descriptivo.
+- `knitr`: Integración de gráficos y resultados en el informe descriptivo. 
 - `renv`: Control de versiones de librerías
 
 Los paquetes utilizados y sus versiones exactas están registrados en `renv.lock`, generado con `renv::init()`. Para restaurar el ambiente en otra máquina basta ejecutar `renv::restore()`.
@@ -138,3 +141,38 @@ Los outputs se encuentran en `03_outputs/`:
 | `acondicionar_grafico_nas.png` | Gráfico de barras con % de NAs por variable |
 | `acondicionar_reporte_nas.csv` | Reporte tabular reproducible de NAs por variable |
 | `acondicionar_reporte_nas.html` | Reporte presentable con etiquetas descriptivas |
+
+---
+
+## EXPLORAR
+
+La exploración se realizó en dos archivos: `04_exploracion.R` (estadísticas descriptivas, visualizaciones y exploración bivariada) y `05_informe_descriptivo.Rmd` (informe interpretado en HTML). El análisis es exclusivamente descriptivo, responde a la pregunta "¿qué hay en los datos?" sin establecer relaciones causales ni contrastar hipótesis.
+
+### Conversión de tipos de datos
+Las variables categóricas se convirtieron de `<dbl>` a `factor` con etiquetas legibles según el diccionario de variables de la ENAHO 2025: `sexo_jefe`, `ecivil_jefe`, `dominio`, las variables de programas sociales (`prog_*`) (0/1 → No/Sí) y las variables de inseguridad alimentaria (`fies_*`) (1/2 → Sí/No).
+
+### Diseño muestral y factor de expansión
+Todos los cálculos de frecuencia, proporción y estadísticos descriptivos incorporan el factor de expansión `FACTOR07` del Módulo 700 mediante el paquete `survey`. Se definió un objeto de diseño muestral con `svydesign()` que pondera cada hogar según el número de hogares que representa en la población objetivo. Los resultados se interpretan como estimaciones poblacionales y no como frecuencias muestrales. La base con tipos corregidos y diseño muestral definido se exportó como `enaho_2025_v5.parquet`.
+
+-*Nota metodológica: En una primera etapa del proyecto se realizó una exploración descriptiva utilizando únicamente la muestra de hogares. Posteriormente, el análisis fue actualizado para incorporar el factor de expansión de la ENAHO 2025, de modo que las estimaciones fueran representativas de la población de hogares del país. Con fines de reproducibilidad y trazabilidad del proceso, se conservó la versión previa (`enaho_2025_v4.parquet`) y se generó `enaho_2025_v5.parquet` como la versión definitiva empleada en el análisis.*
+
+### Variables exploradas
+
+**Exploración univariada**: Se exploraron seis variables (sexo, edad y estado civil del jefe de hogar, dominio geográfico, participación en programas de asistencia alimentaria y escala FIES). Las variables categóricas se analizaron con tablas de frecuencias ponderadas (`svytable()`) y gráficos de barras. La variable continua `edad_jefe` se exploró con estadísticos descriptivos ponderados (`svymean()`, `svyvar()`, `svyquantile()`) e histograma.
+
+**Exploración bivariada**: Se realizaron diez cruces en el script `04_exploracion.R`, combinando variables sociodemográficas, condición de beneficiario e inseguridad alimentaria. Para el informe descriptivo `05_informe_descriptivo.Rmd` se seleccionaron cuatro cruces por su mayor relevancia temática respecto a la pregunta central del proyecto: 
+
+1. Beneficiario de algún programa × inseguridad alimentaria (todos los ítems FIES)
+2. Sexo del jefe × condición de beneficiario
+3. Dominio geográfico × programas de asistencia alimentaria
+4. Edad del jefe × inseguridad alimentaria (todos los ítems FIES)
+
+Los cinco cruces restantes (estado civil × sexo, sexo × dominio, edad × sexo, estado civil × beneficiario y sexo × programas) se encuentran disponibles en `03_outputs/` como evidencia del proceso exploratorio, pero no se incluyeron en el informe por ser menos centrales al tema del proyecto.
+
+Las estimaciones en todos los cruces incorporan el factor de expansión mediante `svyby()`. Los cruces categórica × categórica se presentan como tablas de contingencia ponderadas. El cruce continua × categórica (edad × FIES) se presenta como boxplot por grupo.
+
+### Outputs generados
+
+Los outputs se encuentran en `03_outputs/`:
+
+- En total, se generaron 32 outputs en formato `.png` (gráficos) y `.html` (tablas), además del informe descriptivo (`explorar_informe_descriptivo.html`). El script utilizado para generar el informe se encuentra en `02_scripts/`.
