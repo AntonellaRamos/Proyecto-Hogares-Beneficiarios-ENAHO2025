@@ -94,3 +94,47 @@ El proyecto está desarrollado utilizando R (versión 4.5.1), con las siguientes
 - `renv`: Control de versiones de librerías
 
 Los paquetes utilizados y sus versiones exactas están registrados en `renv.lock`, generado con `renv::init()`. Para restaurar el ambiente en otra máquina basta ejecutar `renv::restore()`.
+
+---
+
+## 3. ACONDICIONAR
+
+El acondicionamiento se realizó en dos scripts: `02_acondicionamiento.R` (selección, renombrado e inspección) y `03_tratamiento_nas.R` (diagnóstico  y tratamiento de valores perdidos).
+
+### Integración de módulos
+La unión de los módulos 200, 700 y 130 se realizó en `01_carga_union_modulos.R` mediante `left_join()`, usando como llave de identificación `CONGLOME + VIVIENDA + HOGAR`. Se optó por `left_join` para conservar todos los hogares del Módulo 200 como base de referencia, asignando `NA` donde no hubiera coincidencia en los módulos 700 y 130. Se verificó que la N resultante fuera igual al número de filas del Módulo 200 (33,702 hogares).
+
+### Filtro de unidad de análisis
+Se filtró el Módulo 200 a los jefes de hogar para trabajar a nivel hogar, usando al jefe como representante sociodemográfico del hogar. 
+
+Esta estrategia metodológica se respalda en tres fundamentos teóricos y operativos:
+- **Evitar la duplicación de observaciones**: Dado que cada hogar posee un identificador único compuesto por las variables de conglomerado, vivienda y hogar, mantener a todos los miembros duplicaría las características agregadas de la vivienda en el dataset. Al filtrar por el jefe de hogar, se garantiza un registro por cada hogar analizado.
+Representación sociodemográfica: Las características del jefe de hogar permiten aproximarse al perfil sociodemográfico del hogar, dado que la ENAHO organiza la composición del hogar a partir de la relación de parentesco con el jefe/a del hogar [(INEI, Diccionario de Variables ENAHO 2025)](https://proyectos.inei.gob.pe/iinei/srienaho/Descarga/DocumentosMetodologicos/2025-37/Diccionario.pdf?utm_source).
+- **Consistencia con módulos del INEI**: El propio INEI diseña módulos específicos (como el de Programas Sociales e Inseguridad Alimentaria) para ser respondidos directamente por el jefe del hogar o el ama de casa, asumiendo metodológicamente que sus respuestas unifican la situación del hogar. El filtro `P203 == 1` permite hacer fusiones de bases de datos (merge) exactas y limpias con estos módulos agregados.
+
+### Selección y renombrado de variables
+Se seleccionaron únicamente las variables relevantes para el proyecto y se renombraron en el mismo paso para mayor legibilidad. Los sufijos `.x` generados por el merge (variables compartidas entre módulos) se resolviero explícitamente en el `select()`, priorizando siempre el Módulo 200 como fuente de variables sociodemográficas. La base resultante (`enaho_2025_v2.parquet`) contiene 33,702 hogares y 28 variables con nombres descriptivos.
+
+### Diagnóstico de valores perdidos
+El diagnóstico identificó dos grupos de variables con valores perdidos:
+
+**Variables de programas sociales**: 6.74% de NAs (2,270 hogares). Los NAs aparecen de forma consistente en todas las variables del módulo, lo  que indica ausencia de información a nivel de módulo. Se verificó que los  hogares afectados sí tienen informante registrado en `P700I`, descartando  ausencia estructural. Los NAs se concentran en el dominio 8 (Lima  Metropolitana, 38.8%) frente a menos del 1% en otros dominios. Es un patrón **MAR** (Missing at Random).
+
+**Variables FIES**: 2.99% de NAs (1,009 hogares). Los NAs aparecen de forma consistente en las 8 variables, con concentración en el dominio 8 (16.1%) frente a menos del 5% en otros dominios. Es un patrón **MAR**. Adicionalmente se identificaron valores 3 (No sabe) y 4 (No responde) en todas las variables FIES.
+
+- Nota: Se verificó además que los NAs de ambos módulos corresponden a hogares distintos: 1,379 hogares tienen NAs solo en programas sociales, 118 solo en FIES, 891 en ambos módulos y 31,314 sin NAs en ninguno.
+
+### Tratamiento de valores perdidos
+
+En ambos casos se optó por **conservar los NAs** sin imputación ni eliminación listwise. Esta decisión responde a que la exclusión de casos incompletos se realizará de forma controlada en CLASIFICAR, al momento de construir las variables compuestas (variable de beneficiario y índice FIES), evitando así reducir la N de forma prematura.
+
+Como excepción, en las variables FIES se convirtieron los valores 3 (No sabe) y 4 (No responde) a NA, por no ser respuestas válidas para la escala, que solo acepta Sí (1) o No (2).
+
+### Outputs generados
+Los outputs se encuentran en `03_outputs/`:
+
+| Archivo | Descripción |
+|---------|-------------|
+| `acondicionar_grafico_nas.png` | Gráfico de barras con % de NAs por variable |
+| `acondicionar_reporte_nas.csv` | Reporte tabular reproducible de NAs por variable |
+| `acondicionar_reporte_nas.html` | Reporte presentable con etiquetas descriptivas |
