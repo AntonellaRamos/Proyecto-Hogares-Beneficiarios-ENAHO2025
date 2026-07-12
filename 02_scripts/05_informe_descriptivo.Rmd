@@ -101,6 +101,29 @@ knitr::include_graphics("../03_outputs/explorar_grafico_dominio.png")
 ```
 El análisis territorial evidencia una concentración de los hogares beneficiarios estimados en Lima Metropolitana y en los dominios de la Sierra sur, Costa norte y Sierra centro, que en conjunto reúnen una proporción importante de la cobertura representada. Aunque los hogares beneficiarios se distribuyen en todos los dominios geográficos del país, la distribución muestra una mayor presencia en zonas urbanas y en algunos dominios andinos, reflejando diferencias territoriales en la composición de los hogares atendidos por programas de asistencia alimentaria.
 
+# ¿A quiénes llegan los programas? Cobertura de asistencia alimentaria
+
+## Qali Warma como programa dominante: frecuencia por programa
+
+**Figura 5**
+```{r Gráfico de barras: Hogares beneficiarios por programa de asistencia alimentaria"}
+knitr::include_graphics("../03_outputs/explorar_grafico_programas.png")
+```
+La distribución de los hogares beneficiarios según programa de asistencia alimentaria reportado muestra una mayor presencia de modalidades vinculadas a la alimentación escolar y comunitaria. Qali Warma en su modalidad desayuno presenta la mayor proporción estimada de hogares que reportan recibir este beneficio (20.8%), seguido por el Programa Vaso de Leche (9.2%) y Qali Warma en su modalidad almuerzo (9.0%). 
+
+En menor proporción se encuentran los Comedores Populares (3.3%), mientras que programas como Cuna Más (0.3%), Canasta de alimentos (0.3%) y otras modalidades complementarias presentan una participación reducida dentro de la población analizada. Cabe señalar que estas proporciones no son mutuamente excluyentes, ya que un mismo hogar puede reportar acceso a más de un programa de asistencia alimentaria.
+
+# ¿Cuánta hambre hay detrás de los números? Inseguridad alimentaria según la escala FIES
+
+## La preocupación como experiencia más extendida: respuestas por ítem
+
+**Figura 6**
+```{r Gráfico de barras: Hogares beneficiarios por programa de asistencia alimentaria"}
+knitr::include_graphics("../03_outputs/explorar_grafico_fies.png")
+```
+El análisis de los componentes de la Escala de Experiencia de Inseguridad Alimentaria (FIES) muestra un patrón decreciente según la severidad de las experiencias reportadas por los hogares beneficiarios de programas asistenciales en el Perú (2025). Los indicadores asociados a preocupaciones y restricciones en la calidad de la alimentación presentan las mayores prevalencias: el 50.6% de los hogares estima haber experimentado preocupación por la falta de alimentos, seguido por dificultades para acceder a una alimentación saludable (43.2%) y una menor variedad de alimentos (40.4%). 
+
+En contraste, las experiencias de mayor severidad presentan menores proporciones, aunque reflejan la persistencia de situaciones críticas: el 13.0% reporta haberse quedado sin alimentos y el 5.2% haber pasado un día entero sin comer. En conjunto, los resultados muestran que los hogares beneficiarios presentan distintos niveles de inseguridad alimentaria, desde preocupaciones sobre el acceso hasta episodios de privación alimentaria severa.
 
 
 
