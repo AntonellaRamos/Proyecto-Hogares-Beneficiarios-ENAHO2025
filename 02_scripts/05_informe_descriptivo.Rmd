@@ -2,7 +2,7 @@
 title: "Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
 subtitle: "Informe descriptivo — ENAHO 2025"
 author: "Antonella Ramos Rios"
-date: "11 de Julio de 2026"
+date: "12 de Julio de 2026"
 output:
   html_document:
     theme: flatly
@@ -131,11 +131,81 @@ knitr::include_graphics("../03_outputs/explorar_grafico_fies.png")
 ```
 El gráfico muestra un patrón general decreciente según la severidad de las experiencias de inseguridad alimentaria. Los indicadores asociados a preocupación por el acceso y restricciones en la calidad de la dieta concentran las mayores proporciones de respuesta afirmativa. Dentro de las experiencias relacionadas con la reducción en la cantidad de alimentos, destaca que comer menos de lo habitual (FIES 5) presenta una mayor frecuencia que omitir comidas (FIES 4), lo que sugiere que una proporción de hogares experimenta ajustes en su consumo alimentario antes de llegar a situaciones de mayor restricción. Finalmente, los indicadores asociados a privaciones más severas, como quedarse sin alimentos o pasar un día entero sin comer, presentan las menores proporciones.
 
+# ¿Los programas llegan a quienes más los necesitan? 
 
+## Entre vulnerabilidad y asistencia: beneficiarios y niveles de inseguridad alimentaria
 
+**Tabla 5**
+```{r Tabla de frecuencias: Experiencias de inseguridad alimentaria según condición de beneficiario"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_biv_beneficiario_fies8.html")
+```
+El análisis comparativo de la Escala de Experiencia de Inseguridad Alimentaria (FIES) muestra que los hogares beneficiarios presentan mayores proporciones de respuestas afirmativas en los ocho ítems evaluados respecto a los hogares no beneficiarios. Las mayores diferencias se observan en los ítems asociados a la preocupación por el acceso y las restricciones en la calidad de la dieta: la preocupación por la falta de alimentos alcanza al 57.8% de los hogares beneficiarios frente al 46.6% de los no beneficiarios. Asimismo, los ítems asociados a experiencias de mayor severidad presentan mayores proporciones entre los beneficiarios, aunque con brechas más reducidas. En conjunto, los resultados evidencian una mayor exposición a experiencias de inseguridad alimentaria entre los hogares beneficiarios, lo que es consistente con una mayor concentración de hogares en situación de vulnerabilidad.
 
+## ¿Importa quién lidera el hogar? Acceso a programas alimentarios según sexo del jefe de hogar
 
+**Tabla 6**
+```{r Tabla de frecuencias: Condición de beneficiario según sexo del jefe del hogar"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_biv_sexo_beneficiario.html")
+```
+La distribución del acceso a programas de asistencia alimentaria presenta diferencias reducidas según el sexo del jefe de hogar. Entre los hogares con jefatura masculina, el 34.6% reporta ser beneficiario, mientras que entre aquellos con jefatura femenina la proporción alcanza el 32.2%. Esta diferencia sugiere una participación relativamente similar entre ambos grupos, por lo que no se observa una brecha marcada de acceso asociada al sexo del jefe de hogar.
 
+## La geografía del apoyo alimentario: ¿qué programas predominan en cada territorio?
 
+**Tabla 7**
+```{r Tabla de frecuencias: Programas de asistencia alimentaria según dominio geográfico"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_biv_dominio_programas.html")
+```
+Los resultados complementan la distribución general de programas observada previamente. Si bien el análisis univariado mostró que Qali Warma (desayuno) constituye la modalidad con mayor presencia entre los hogares beneficiarios, el análisis por dominio geográfico evidencia que esta predominancia no se distribuye de manera homogénea. Su presencia es particularmente elevada en la Selva (39.1%) y en la Sierra Norte (28.9%), mientras que en Lima Metropolitana alcanza una proporción menor (13.3%). En contraste, los programas de carácter comunitario, como el Programa Vaso de Leche y los Comedores Populares, adquieren mayor relevancia relativa en ámbitos urbanos como Lima Metropolitana. Estos patrones sugieren que la oferta alimentaria se articula de manera diferenciada según las características territoriales de los hogares beneficiarios.
 
+**Figura 7**
+```{r Gráfico de barras: Principales programas de asistencia alimentaria según dominio geográfico"}
+knitr::include_graphics("../03_outputs/explorar_biv_dominio_programas.png")
+```
+El análisis por dominio geográfico de los principales programas de asistencia alimentaria muestra patrones de distribución diferenciados según territorio. Qali Warma (desayuno) concentra la mayor presencia entre las modalidades seleccionadas, especialmente en dominios con mayor componente rural como la Selva y la Sierra. Por su parte, los Comedores Populares presentan una mayor relevancia relativa en Lima Metropolitana, mientras que el Programa Vaso de Leche mantiene una distribución más extendida entre los distintos dominios. En conjunto, los resultados sugieren que la cobertura de los principales programas alimentarios combina estrategias de alcance nacional con modalidades adaptadas a las características territoriales.
 
+## La edad como factor de riesgo: inseguridad alimentaria según edad del jefe de hogar
+
+**Figura 8**
+```{r Boxplot: Edad del jefe del hogar según experiencias de inseguridad alimentaria"}
+knitr::include_graphics("../03_outputs/explorar_biv_edad_fies.png")
+```
+El análisis muestra que la distribución de la edad del jefe de hogar es similar entre quienes respondieron afirmativamente y quienes respondieron negativamente a los distintos ítems de la Escala de Experiencia de Inseguridad Alimentaria (FIES). En todos los casos, la mediana se ubica alrededor de los 54 años, mientras que el 50% central de las observaciones se concentra aproximadamente entre los 42 y 65 años. Asimismo, la dispersión y la presencia de valores extremos son similares entre los grupos, sin diferencias visuales relevantes. En conjunto, el gráfico sugiere que la edad del jefe de hogar no presenta un patrón claramente diferenciado según las experiencias de inseguridad alimentaria reportadas.
+
+---
+
+# Lo que los datos sugieren: conclusiones exploratorias
+
+**1. Perfil sociodemográfico**
+
+Los hogares beneficiarios presentan un perfil caracterizado por jefaturas predominantemente masculinas y adultas, con una edad mediana cercana a los 54 años. Asimismo, más de la mitad de los hogares cuenta con jefes de hogar casados o convivientes, aunque también se observa una proporción importante de jefaturas separadas y viudas.
+
+**2. Distribución territorial**
+
+La aplicación del factor de expansión muestra que Lima Metropolitana concentra la mayor proporción estimada de hogares beneficiarios (32.3%), seguida por la Sierra sur y la Costa norte. Estos resultados evidencian que la población beneficiaria se distribuye tanto en ámbitos urbanos como rurales, aunque con diferencias territoriales importantes.
+
+**3. Programas de asistencia alimentaria**
+
+Entre los programas analizados, Qali Warma (desayuno) presenta la mayor presencia dentro de los hogares beneficiarios. Además, el análisis por dominio geográfico evidencia patrones territoriales diferenciados: mientras las modalidades escolares tienen mayor presencia en la Selva y la Sierra, los Comedores Populares adquieren una mayor relevancia relativa en Lima Metropolitana.
+
+**4. Inseguridad alimentaria**
+
+Los resultados de la escala FIES muestran que las experiencias relacionadas con la preocupación por el acceso a los alimentos y las restricciones en la calidad de la dieta son las más frecuentes entre los hogares beneficiarios. Aunque las experiencias de mayor severidad presentan menores proporciones, todavía existe un grupo de hogares que reporta haberse quedado sin alimentos o haber pasado un día entero sin comer.
+
+**5. Consideración general**
+
+En conjunto, el análisis descriptivo evidencia que los hogares beneficiarios de programas de asistencia alimentaria presentan características sociodemográficas diversas y distintos niveles de inseguridad alimentaria, así como diferencias en la distribución territorial de los programas. Estos resultados constituyen una base para análisis posteriores orientados a identificar los factores asociados a la recepción de programas y a la inseguridad alimentaria.
+
+---
+
+# ¿Qué nos dejan estos hallazgos?
+El desarrollo de este análisis permitió comprender que la descripción de los datos constituye una etapa fundamental antes de realizar análisis explicativos. La incorporación del factor de expansión modificó la interpretación de varios resultados, evidenciando la importancia de distinguir entre la muestra observada y la población que representa la ENAHO. En particular, la distribución de los hogares beneficiarios por dominio geográfico mostró que las conclusiones pueden variar sustancialmente cuando se consideran estimaciones poblacionales en lugar de frecuencias muestrales.
+
+Asimismo, el análisis territorial de los programas de asistencia alimentaria puso de manifiesto que las diferencias observadas entre dominios no necesariamente reflejan una mayor o menor eficacia de los programas. Estas variaciones también pueden estar asociadas con factores que no fueron analizados en este estudio, como la disponibilidad de establecimientos educativos, la cobertura efectiva de cada programa, la densidad poblacional o los criterios de focalización utilizados por las entidades responsables de su implementación.
+
+Por otro lado, los resultados de la Escala de Experiencia de Inseguridad Alimentaria (FIES) muestran que, aun entre hogares que reciben asistencia alimentaria, persisten experiencias de inseguridad alimentaria, incluidas algunas de carácter severo. Sin embargo, el alcance descriptivo del presente estudio no permite establecer relaciones de causalidad ni evaluar el impacto de los programas sobre estas condiciones.
+
+En este sentido, los hallazgos obtenidos constituyen un punto de partida para futuras investigaciones que profundicen en los factores asociados tanto al acceso a los programas de asistencia alimentaria como a la inseguridad alimentaria de los hogares. Análisis de carácter inferencial o multivariado permitirían evaluar con mayor precisión el papel de variables como el nivel de ingresos, el tamaño del hogar, el ámbito urbano-rural, la presencia de población escolar o las características territoriales en la distribución de los programas y en las condiciones de vulnerabilidad alimentaria.
+
+---
+
+*Nota metodológica: Los valores perdidos identificados durante el proceso de acondicionamiento se conservaron, sin aplicar imputación ni eliminación listwise. Los porcentajes se calcularon sobre el total de respuestas válidas para cada variable, salvo que se indique lo contrario. El código fuente utilizado para el procesamiento y análisis de los datos se encuentra disponible en el repositorio público de GitHub.*
