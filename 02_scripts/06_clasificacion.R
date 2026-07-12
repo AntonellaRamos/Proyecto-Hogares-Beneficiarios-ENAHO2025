@@ -509,3 +509,8 @@ enaho_2025 %>%
   tab_source_note("Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.") %>%
   tab_source_note("Nota:La distribución se calcula sobre los casos clasificados en la tipología. Se excluyen observaciones con valores faltantes en dominio geográfico, nivel de inseguridad alimentaria o condición de beneficiario.") %>%
   gtsave("03_outputs/clasificar_tabla_tipologia4.html")
+
+# 8. Exportar base clasificada ----
+# Se exporta la base clasifica y renombrada como sexta versión
+# del dataset procesado. 
+write_parquet(enaho, "01_datos/procesados/enaho_2025_v6.parquet")
