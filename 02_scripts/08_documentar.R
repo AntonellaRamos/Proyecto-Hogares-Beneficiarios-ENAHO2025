@@ -70,3 +70,34 @@ var_label(enaho_codebook_2025$tipologia_1) <- "Tipología 1: Condición de benef
 var_label(enaho_codebook_2025$tipologia_2) <- "Tipología 2: Perfil sociodemográfico del jefe de hogar (sexo × grupo de edad)"
 var_label(enaho_codebook_2025$tipologia_3) <- "Tipología 3: Dominio geográfico × condición de beneficiario"
 var_label(enaho_codebook_2025$tipologia_4) <- "Tipología 4: Dominio geográfico × nivel de inseguridad alimentaria × condición de beneficiario"
+
+# 5. Documentación de decisiones metodológicas ----
+dict_metadata <- list(
+  sexo_jefe = "Variable original P207 del Módulo 200. Recodificada a factor con etiquetas: 1=Hombre, 2=Mujer.",
+  edad_jefe = "Variable original P208A del Módulo 200. Sin transformación. Variable continua en años cumplidos.",
+  ecivil_jefe = "Variable original P209 del Módulo 200. Recodificada a factor con 6 categorías: Casado/a, Conviviente, Viudo/a, Divorciado/a, Separado/a, Soltero/a.",
+  dominio = "Variable original DOMINIO del Módulo 200. Recodificada a factor con 8 categorías geográficas del diseño muestral ENAHO.",
+  factor07 = "Factor de expansión anual a nivel hogar proveniente del Módulo 700. Utilizado para obtener estimaciones representativas de la población de hogares peruanos.",
+  grupo_edad_jefe = "Recodificación de edad_jefe en tres grupos usando cortes estándar INEI: joven (<30), adulto (30-59), adulto mayor (60+).",
+  ecivil_agrupado = "Reagrupación de ecivil_jefe en tres categorías sustantivas: en pareja (casado/a y conviviente), sin pareja por ruptura o viudez (separado/a, viudo/a, divorciado/a) y soltero/a.",
+  beneficiario = "Variable dicotómica construida a partir de 9 variables de programas del Módulo 700 (prog_vaso_leche a prog_otro3). Un hogar es beneficiario si reportó recibir al menos un programa. Se excluye prog_no_recibio. Hogares con NA en todas las variables de programas conservan NA.",
+  fies_score = "Índice sumativo construido a partir de los 8 ítems de la Escala de Experiencia de Inseguridad Alimentaria (FIES) del Módulo 130, siguiendo la metodología oficial de la FAO. Cada ítem se recodificó como 1 (Sí) o 0 (No). Rango: 0-8. Hogares con NA en algún ítem reciben NA en el índice.",
+  fies_nivel = "Clasificación del puntaje FIES según umbrales oficiales FAO: 0-1 = seguridad alimentaria o inseguridad leve; 2-3 = inseguridad moderada; 4-8 = inseguridad severa. Hogares con NA en fies_score conservan NA.",
+  tipologia_1 = "Tipología MECE construida a partir del cruce de condición de beneficiario × nivel de inseguridad alimentaria. Genera 6 tipos: beneficiario con inseguridad leve, moderada o severa; y no beneficiario con inseguridad leve, moderada o severa. Hogares con NA en alguna variable quedan excluidos.",
+  tipologia_2 = "Tipología MECE construida a partir del cruce de sexo_jefe × grupo_edad_jefe. Genera 6 tipos: hombre joven, hombre adulto, hombre adulto mayor, mujer joven, mujer adulta y mujer adulta mayor.",
+  tipologia_3 = "Tipología MECE construida a partir del cruce de dominio geográfico × condición de beneficiario. Genera 16 combinaciones (8 dominios × 2 condiciones de beneficiario). Permite describir la distribución territorial de los hogares según su condición de beneficiario.",
+  tipologia_4 = "Tipología MECE construida a partir del cruce de dominio geográfico × nivel de inseguridad alimentaria × condición de beneficiario. Genera combinaciones territoriales según condición de beneficiario y nivel de inseguridad alimentaria."
+)
+
+for (var in names(dict_metadata)) {
+  attr(enaho_codebook_2025[[var]], "description") <- dict_metadata[[var]]
+}
+
+# Metadatos a nivel de estudio
+metadata(enaho_codebook_2025)$name        <- "Base de Datos Analítica - Hogares Beneficiarios ENAHO 2025"
+metadata(enaho_codebook_2025)$description <- "Submuestra de la Encuesta Nacional de Hogares (ENAHO) 2025 restringida a jefes de hogar, con variables sociodemográficas, de programas de asistencia alimentaria e inseguridad alimentaria (FIES)."
+metadata(enaho_codebook_2025)$creator     <- "Antonella Ramos"
+
+# Guardamos con metadatos
+write_parquet(enaho_codebook_2025, "01_datos/procesados/enaho_2025_v7_codebook.parquet")
+
