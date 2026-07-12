@@ -14,6 +14,7 @@
 library(tidyverse)
 library(arrow)
 library(gt)
+library(survey)
 
 # 2. Cargar base tratada ----
 enaho_2025 <- read_parquet("01_datos/procesados/enaho_2025_v3.parquet")
@@ -67,21 +68,43 @@ enaho_2025 <- enaho_2025 %>%
 # Verificación de tipos
 glimpse(enaho_2025)
 
+# 3.1 Diseño muestral con factor de expansión ----
+# La ENAHO utiliza un diseño muestral probabilístico, por lo que los análisis
+# requieren incorporar el factor de expansión para obtener estimaciones
+# representativas de la población de hogares.
+#
+# El factor07 permite ponderar cada observación según el número de hogares
+# que representa dentro de la población objetivo. Por ello, las frecuencias,
+# porcentajes y estadísticas descriptivas posteriores se interpretan como
+# estimaciones poblacionales y no únicamente como resultados de la muestra.
+#
+# Se especifica un diseño sin estratificación ni conglomerados debido a que
+# el análisis se concentra en la aplicación del factor de expansión disponible
+# en la base procesada.
+enaho_diseno <- svydesign(
+  ids = ~1,
+  weights = ~factor07,
+  data = enaho_2025
+)
+
 # 4. Variables sociodemográficas del jefe del hogar ----
+
 # 4.1 Sexo del jefe del hogar ----
 
-# Tabla de frecuencias
-tabla_sexo <- enaho_2025 %>%
-  count(sexo_jefe) %>%
-  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
-  rename(
-    "Sexo"       = sexo_jefe,
-    "N"          = n,
-    "Porcentaje (%)" = porcentaje
+# Tabla de frecuencias ponderada
+tabla_sexo <- svytable(~sexo_jefe, enaho_diseno) %>%
+  as.data.frame() %>%
+  mutate(
+    porcentaje = round(Freq / sum(Freq) * 100, 1)
   )
 
 # Tabla gt
 tabla_sexo %>%
+  rename(
+    "Sexo" = sexo_jefe,
+    "Hogares representados" = Freq,
+    "Porcentaje (%)" = porcentaje
+  ) %>%
   gt() %>%
   tab_header(
     title = "Distribución de hogares según sexo del jefe del hogar",
@@ -107,9 +130,10 @@ tabla_sexo %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: La distribución representa la proporción de hogares según el sexo del jefe del hogar (n = ",
-      sum(tabla_sexo$N),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares aplicando el factor de expansión de la ENAHO 2025 según el sexo del jefe del hogar. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_sexo$Freq)), big.mark = ","),
+      "."
     )
   ) %>%
   gtsave(
@@ -117,9 +141,7 @@ tabla_sexo %>%
   )
 
 # Gráfico de barras
-grafico_sexo <- enaho_2025 %>%
-  count(sexo_jefe) %>%
-  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+grafico_sexo <- tabla_sexo %>%
   ggplot(aes(x = sexo_jefe, y = porcentaje, fill = sexo_jefe)) +
   geom_col(show.legend = FALSE) +
   geom_text(
@@ -140,9 +162,9 @@ grafico_sexo <- enaho_2025 %>%
     y = "Porcentaje (%)",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: La distribución representa la proporción de hogares según el sexo del jefe del hogar (n = ",
-      nrow(enaho_2025),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(enaho_2025$factor07, na.rm = TRUE)), big.mark = ",")
     )
   ) +
   theme_minimal() +
@@ -157,7 +179,7 @@ print(grafico_sexo)
 ggsave(
   "03_outputs/explorar_grafico_sexo_jefe.png",
   plot = grafico_sexo,
-  width = 8,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -165,67 +187,35 @@ ggsave(
 
 # 4.2 Edad del jefe del hogar ----
 
-# Estadísticas descriptivas
-resumen_edad <- enaho_2025 %>%
-  summarise(
-    media   = round(mean(edad_jefe, na.rm = TRUE), 1),
-    mediana = median(edad_jefe, na.rm = TRUE),
-    de      = round(sd(edad_jefe, na.rm = TRUE), 1),
-    minimo  = min(edad_jefe, na.rm = TRUE),
-    maximo  = max(edad_jefe, na.rm = TRUE),
-    q1      = quantile(edad_jefe, 0.25, na.rm = TRUE, names = FALSE),
-    q3      = quantile(edad_jefe, 0.75, na.rm = TRUE, names = FALSE)
-  )
+# Estadísticas descriptivas ponderadas
 
-print(resumen_edad)
-
-# Histograma
-grafico_edad_hist <- enaho_2025 %>%
-  ggplot(aes(x = edad_jefe)) +
-  geom_histogram(
-    binwidth = 5,
-    fill = "#264653",
-    color = "white"
-  ) +
-  labs(
-    title = "Distribución de la edad del jefe del hogar",
-    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
-    x = "Edad (años cumplidos)",
-    y = "Número de hogares",
-    caption = paste0(
-      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: La distribución representa la edad del jefe del hogar en años cumplidos (n = ",
-      nrow(enaho_2025),
-      " hogares). Los intervalos del histograma corresponden a grupos de 5 años."
-    )
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(
-      hjust = 0.5,
-      face = "bold",
-      size = 14
-    ),
-    plot.subtitle = element_text(
-      hjust = 0.5,
-      size = 10
-    ),
-    plot.caption = element_text(
-      hjust = 0,
-      size = 9
-    )
-  )
-
-print(grafico_edad_hist)
-
-ggsave(
-  "03_outputs/explorar_histograma_edad_jefe.png",
-  plot = grafico_edad_hist,
-  width = 10,
-  height = 6,
-  dpi = 300,
-  bg = "white"
+resumen_edad <- data.frame(
+  media = coef(svymean(~edad_jefe, enaho_diseno, na.rm = TRUE)),
+  de = sqrt(coef(svyvar(~edad_jefe, enaho_diseno, na.rm = TRUE))),
+  minimo = min(enaho_2025$edad_jefe, na.rm = TRUE),
+  maximo = max(enaho_2025$edad_jefe, na.rm = TRUE)
 )
+
+# Mediana y cuartiles ponderados
+cuartiles_edad <- svyquantile(
+  ~edad_jefe,
+  enaho_diseno,
+  quantiles = c(0.25, 0.5, 0.75),
+  na.rm = TRUE
+)
+
+resumen_edad <- resumen_edad %>%
+  mutate(
+    mediana = coef(cuartiles_edad)[2],
+    q1 = coef(cuartiles_edad)[1],
+    q3 = coef(cuartiles_edad)[3]
+  ) %>%
+  mutate(
+    across(
+      everything(),
+      ~ round(.x, 1)
+    )
+  )
 
 # Tabla descriptiva
 tabla_edad <- resumen_edad %>%
@@ -282,28 +272,84 @@ tabla_edad %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: Los estadísticos descriptivos corresponden a la edad del jefe del hogar (n = ",
-      nrow(enaho_2025),
-      " hogares)."
+      "Nota: Los estadísticos descriptivos corresponden a la edad del jefe del hogar  aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+       format(round(sum(tabla_sexo$Freq)), big.mark = ","),
+       "."
     )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_edad_jefe.html"
   )
 
+# Histograma
+grafico_edad_hist <- enaho_2025 %>%
+  ggplot(aes(
+    x = edad_jefe,
+    weight = factor07
+  )) +
+  geom_histogram(
+    binwidth = 5,
+    fill = "#264653",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribución de la edad del jefe del hogar",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
+    x = "Edad (años cumplidos)",
+    y = "Número estimado de hogares",
+    caption = paste0(
+      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
+      "Nota: La distribución representa la edad estimada del jefe del hogar aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(enaho_2025$factor07, na.rm = TRUE)), big.mark = ","),
+      ".\n",
+      "Los intervalos del histograma corresponden a grupos de 5 años."
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 10
+    ),
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9
+    )
+  )
+
+print(grafico_edad_hist)
+
+ggsave(
+  "03_outputs/explorar_histograma_edad_jefe.png",
+  plot = grafico_edad_hist,
+  width = 14,
+  height = 6,
+  dpi = 300,
+  bg = "white"
+)
+
 # 4.3 Estado civil del jefe del hogar ----
 
-# Tabla de frecuencias
-tabla_ecivil <- enaho_2025 %>%
-  count(ecivil_jefe, name = "N") %>%
-  mutate(porcentaje = round(N / sum(N) * 100, 1)) %>%
-  arrange(desc(N))
+# Tabla de frecuencias ponderada
+tabla_ecivil <- svytable(~ecivil_jefe, enaho_diseno) %>%
+  as.data.frame() %>%
+  mutate(
+    porcentaje = round(Freq / sum(Freq) * 100, 1)
+  ) %>%
+  arrange(desc(Freq))
 
 # Tabla gt
 tabla_ecivil %>%
   rename(
     "Estado civil del jefe del hogar" = ecivil_jefe,
-    "Número de hogares" = N,
+    "Hogares representados" = Freq,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -324,16 +370,17 @@ tabla_ecivil %>%
   ) %>%
   cols_align(
     align = "center",
-    columns = c("Número de hogares", "Porcentaje (%)")
+    columns = c("Hogares representados", "Porcentaje (%)")
   ) %>%
   tab_source_note(
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: La distribución representa la proporción de hogares según el estado civil del jefe del hogar (n = ",
-      sum(tabla_ecivil$N),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares según el estado civil del jefe del hogar aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_ecivil$Freq)), big.mark = ","),
+      "."
     )
   ) %>%
   gtsave(
@@ -341,11 +388,9 @@ tabla_ecivil %>%
   )
 
 # Gráfico de barras
-grafico_ecivil <- enaho_2025 %>%
-  count(ecivil_jefe) %>%
+grafico_ecivil <- tabla_ecivil %>%
   mutate(
-    porcentaje = round(n / sum(n) * 100, 1),
-    ecivil_jefe = fct_reorder(ecivil_jefe, n, .desc = TRUE)
+    ecivil_jefe = fct_reorder(ecivil_jefe, Freq, .desc = TRUE)
   ) %>%
   ggplot(aes(x = ecivil_jefe, y = porcentaje)) +
   geom_col(
@@ -363,9 +408,10 @@ grafico_ecivil <- enaho_2025 %>%
     y = "Porcentaje (%)",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: La distribución representa la proporción de hogares según el estado civil del jefe del hogar (n = ",
-      nrow(enaho_2025),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares según el estado civil del jefe del hogar aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_ecivil$Freq)), big.mark = ","),
+      "."
     )
   ) +
   theme_minimal() +
@@ -390,7 +436,7 @@ print(grafico_ecivil)
 ggsave(
   "03_outputs/explorar_grafico_ecivil_jefe.png",
   plot = grafico_ecivil,
-  width = 10,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -398,21 +444,19 @@ ggsave(
 
 # 4.4 Dominio geográfico ----
 
-# Tabla de frecuencias
-tabla_dominio <- enaho_2025 %>%
-  count(dominio, name = "N") %>%
+# Tabla de frecuencias ponderada
+tabla_dominio <- svytable(~dominio, enaho_diseno) %>%
+  as.data.frame() %>%
   mutate(
-    porcentaje = round(N / sum(N) * 100, 1)
+    porcentaje = round(Freq / sum(Freq) * 100, 1)
   ) %>%
-  arrange(desc(N))
-
-print(tabla_dominio)
+  arrange(desc(Freq))
 
 # Tabla gt
 tabla_dominio %>%
   rename(
     "Dominio geográfico" = dominio,
-    "Número de hogares" = N,
+    "Hogares representados" = Freq,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -440,38 +484,38 @@ tabla_dominio %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: La distribución representa la proporción de hogares según dominio geográfico (n = ",
-      sum(tabla_dominio$N),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares según dominio geográfico aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_dominio$Freq)), big.mark = ","),
+      "."
     )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_dominio.html"
   )
 
-
 # Gráfico de barras
 grafico_dominio <- ggplot(
   tabla_dominio,
   aes(
-    x = fct_reorder(dominio, N),
+    x = fct_reorder(dominio, Freq),
     y = porcentaje,
     fill = dominio
   )
 ) +
-geom_col(show.legend = FALSE) +
-scale_fill_manual(
-  values = c(
-    "Costa norte" = "#264653",
-    "Costa centro" = "#2A5C7A",
-    "Costa sur" = "#3A6D8C",
-    "Sierra norte" = "#457B9D",
-    "Sierra centro" = "#5A91B5",
-    "Sierra sur" = "#76A5AF",
-    "Selva" = "#8DBCC7",
-    "Lima Metropolitana" = "#A8DADC"
-  )
-) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(
+    values = c(
+      "Costa norte" = "#264653",
+      "Costa centro" = "#2A5C7A",
+      "Costa sur" = "#3A6D8C",
+      "Sierra norte" = "#457B9D",
+      "Sierra centro" = "#5A91B5",
+      "Sierra sur" = "#76A5AF",
+      "Selva" = "#8DBCC7",
+      "Lima Metropolitana" = "#A8DADC"
+    )
+  ) +
   geom_text(
     aes(label = paste0(porcentaje, "%")),
     vjust = -0.5,
@@ -484,9 +528,10 @@ scale_fill_manual(
     y = "Porcentaje de hogares (%)",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: La distribución representa la proporción de hogares según dominio geográfico (n = ",
-      nrow(enaho_2025),
-      " hogares)."
+      "Nota: La distribución representa proporciones estimadas de hogares según dominio geográfico aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_dominio$Freq)), big.mark = ","),
+      "."
     )
   ) +
   theme_minimal() +
@@ -506,14 +551,12 @@ scale_fill_manual(
     )
   )
 
-
 print(grafico_dominio)
-
 
 ggsave(
   "03_outputs/explorar_grafico_dominio.png",
   plot = grafico_dominio,
-  width = 10,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -521,95 +564,43 @@ ggsave(
 
 # 5. Programas de asistencia alimentaria ----
 
-# 5.1 Frecuencia de cada programa ----
+# Frecuencia ponderada de cada programa
 tabla_programas <- enaho_2025 %>%
   summarise(
     across(
       c(prog_vaso_leche, prog_comedor, prog_desayuno_esc,
         prog_almuerzo_esc, prog_cuna_mas, prog_canasta,
         prog_otro1, prog_otro2, prog_otro3),
-      ~ sum(. == "Sí", na.rm = TRUE)
+      ~ sum(factor07[. == "Sí"], na.rm = TRUE)
     )
   ) %>%
-  pivot_longer(everything(),
-               names_to  = "programa",
-               values_to = "n") %>%
+  pivot_longer(
+    everything(),
+    names_to = "programa",
+    values_to = "Freq"
+  ) %>%
   mutate(
-    porcentaje = round(n / nrow(enaho_2025) * 100, 1),
-    programa = recode(programa,
-                      "prog_vaso_leche"   = "Programa Vaso de Leche",
-                      "prog_comedor"      = "Comedor Popular",
-                      "prog_desayuno_esc" = "Qali Warma (desayuno)",
-                      "prog_almuerzo_esc" = "Qali Warma (almuerzo)",
-                      "prog_cuna_mas"     = "Cuna Más",
-                      "prog_canasta"      = "Canasta de alimentos",
-                      "prog_otro1"        = "Otro programa 1",
-                      "prog_otro2"        = "Otro programa 2",
-                      "prog_otro3"        = "Otro programa 3"
+    porcentaje = round(Freq / sum(enaho_2025$factor07, na.rm = TRUE) * 100, 1),
+    programa = recode(
+      programa,
+      "prog_vaso_leche"   = "Programa Vaso de Leche",
+      "prog_comedor"      = "Comedor Popular",
+      "prog_desayuno_esc" = "Qali Warma (desayuno)",
+      "prog_almuerzo_esc" = "Qali Warma (almuerzo)",
+      "prog_cuna_mas"     = "Cuna Más",
+      "prog_canasta"      = "Canasta de alimentos",
+      "prog_otro1"        = "Otro programa 1",
+      "prog_otro2"        = "Otro programa 2",
+      "prog_otro3"        = "Otro programa 3"
     )
   ) %>%
-  arrange(desc(n))
-
-# Gráfico de barras
-grafico_programas <- tabla_programas %>%
-  mutate(
-    programa = fct_reorder(programa, n)
-  ) %>%
-  ggplot(aes(x = programa, y = porcentaje)) +
-  geom_col(
-    fill = "#2A9D8F"
-  ) +
-  geom_text(
-    aes(label = paste0(porcentaje, "%")),
-    hjust = -0.2,
-    size = 3.5
-  ) +
-  coord_flip() +
-  labs(
-    title = "Hogares beneficiarios por programa de asistencia alimentaria",
-    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
-    x = "Programa de asistencia alimentaria",
-    y = "Porcentaje de hogares (%)",
-    caption = paste0(
-      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: La frecuencia representa el número y proporción de hogares que reportan recibir cada programa de asistencia alimentaria (n = ",
-      nrow(enaho_2025),
-      " hogares).\nUn hogar puede registrar más de un programa."
-    )
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(
-      hjust = 0.5,
-      face = "bold",
-      size = 14
-    ),
-    plot.subtitle = element_text(
-      hjust = 0.5,
-      size = 10
-    ),
-    plot.caption = element_text(
-      hjust = 0,
-      size = 9
-    )
-  )
-
-print(grafico_programas)
-
-ggsave(
-  "03_outputs/explorar_grafico_programas.png",
-  plot = grafico_programas,
-  width = 12,
-  height = 6,
-  dpi = 300,
-  bg = "white"
-)
+  arrange(desc(Freq))
 
 # Tabla gt
 tabla_programas %>%
   rename(
     "Programa de asistencia alimentaria" = programa,
-    "Número de hogares" = n,
+    "Hogares representados" = Freq,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -637,14 +628,71 @@ tabla_programas %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: La frecuencia representa el número y la proporción de hogares que reportan recibir cada programa de asistencia alimentaria (n = ",
-      nrow(enaho_2025),
-      " hogares). Un hogar puede registrar más de un programa."
+      "Nota: La distribución representa proporciones estimadas de hogares que reportan recibir cada programa de asistencia alimentaria aplicando el factor de expansión de la ENAHO 2025. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(enaho_2025$factor07, na.rm = TRUE)), big.mark = ","),
+      ". Un hogar puede registrar más de un programa."
     )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_programas.html"
   )
+
+# Gráfico de barras
+grafico_programas <- tabla_programas %>%
+  mutate(
+    programa = fct_reorder(programa, Freq)
+  ) %>%
+  ggplot(aes(x = programa, y = porcentaje)) +
+  geom_col(
+    fill = "#2A9D8F"
+  ) +
+  geom_text(
+    aes(label = paste0(porcentaje, "%")),
+    hjust = -0.2,
+    size = 3.5
+  ) +
+  coord_flip() +
+  labs(
+    title = "Hogares beneficiarios por programa de asistencia alimentaria",
+    subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
+    x = "Programa de asistencia alimentaria",
+    y = "Porcentaje de hogares (%)",
+    caption = paste0(
+      "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
+      "Nota: La distribución representa proporciones estimadas de hogares que reportan recibir cada programa de asistencia alimentaria aplicando el factor de expansión de la ENAHO 2025. \n",
+      "Total estimado de hogares representados: ",
+      format(round(sum(enaho_2025$factor07, na.rm = TRUE)), big.mark = ","),
+      ". Un hogar puede registrar más de un programa."
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 10
+    ),
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9
+    )
+  )
+
+print(grafico_programas)
+
+ggsave(
+  "03_outputs/explorar_grafico_programas.png",
+  plot = grafico_programas,
+  width = 14,
+  height = 6,
+  dpi = 300,
+  bg = "white"
+)
 
 # 6. Inseguridad alimentaria (FIES) ----
 
@@ -660,19 +708,28 @@ etiquetas_fies <- c(
   "fies_8" = "FIES 8: Día entero sin comer"
 )
 
-# Tabla de frecuencias
+# Tabla de frecuencias ponderadas
 tabla_fies <- enaho_2025 %>%
-  select(starts_with("fies_")) %>%
-  pivot_longer(everything(),
-               names_to  = "item",
-               values_to = "respuesta") %>%
+  select(starts_with("fies_"), factor07) %>%
+  pivot_longer(
+    cols = starts_with("fies_"),
+    names_to = "item",
+    values_to = "respuesta"
+  ) %>%
   filter(!is.na(respuesta)) %>%
   group_by(item, respuesta) %>%
-  summarise(n = n(), .groups = "drop") %>%
+  summarise(
+    n = sum(factor07),
+    .groups = "drop"
+  ) %>%
   group_by(item) %>%
-  mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+  mutate(
+    porcentaje = round(n / sum(n) * 100, 1)
+  ) %>%
   ungroup() %>%
-  mutate(item = etiquetas_fies[item])
+  mutate(
+    item = etiquetas_fies[item]
+  )
 
 # Gráfico de barras
 grafico_fies <- tabla_fies %>%
@@ -700,7 +757,8 @@ grafico_fies <- tabla_fies %>%
     y = "Porcentaje de hogares (%)",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES).\n",
+      "Nota: El gráfico presenta el porcentaje estimado de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES),\n",
+      "aplicando el factor de expansión de la ENAHO 2025.\n",
       "Los porcentajes se calcularon sobre el total de respuestas válidas de cada ítem; se excluyeron los valores perdidos (NA)."
     )
   ) +
@@ -726,7 +784,7 @@ print(grafico_fies)
 ggsave(
   "03_outputs/explorar_grafico_fies.png",
   plot = grafico_fies,
-  width = 12,
+  width = 14,
   height = 7,
   dpi = 300,
   bg = "white"
@@ -741,7 +799,7 @@ tabla_fies_si <- tabla_fies %>%
 tabla_fies_si %>%
   rename(
     "Ítem FIES" = item,
-    "Número de hogares" = n,
+    "Hogares representados" = n,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -768,7 +826,10 @@ tabla_fies_si %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES).\nLos porcentajes se calcularon sobre el total de respuestas válidas de cada ítem. Se excluyeron los valores perdidos (NA)."
+    source_note = paste0(
+      "Nota: La tabla presenta el porcentaje estimado de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), aplicando el factor de expansión de la ENAHO 2025. ",
+      "Los porcentajes se calcularon sobre el total de respuestas válidas de cada ítem; se excluyeron los valores perdidos (NA)."
+    )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_fies.html"
@@ -776,7 +837,7 @@ tabla_fies_si %>%
 
 # 7. Exploración bivariada ----
 
-# Beneficiario de algún programa vs. respuesta afirmativa en fies_1
+# Beneficiario de algún programa vs. respuesta afirmativa en FIES
 
 # Recodifica la variable de no recepción del programa para identificar hogares beneficiarios (Sí/No)
 enaho_biv <- enaho_2025 %>%
@@ -787,7 +848,7 @@ enaho_biv <- enaho_2025 %>%
 
 # Tabla de frecuencias bivariada entre beneficiario y FIES
 tabla_fies_biv <- enaho_biv %>%
-  select(beneficiario, starts_with("fies_")) %>%
+  select(beneficiario, factor07, starts_with("fies_")) %>%
   pivot_longer(
     cols = starts_with("fies_"),
     names_to = "item_fies",
@@ -799,7 +860,11 @@ tabla_fies_biv <- enaho_biv %>%
   ) %>%
   group_by(item_fies, beneficiario) %>%
   summarise(
-    porcentaje = round(mean(respuesta == "Sí") * 100, 1),
+    porcentaje = round(
+      sum(factor07[respuesta == "Sí"], na.rm = TRUE) /
+        sum(factor07, na.rm = TRUE) * 100,
+      1
+    ),
     .groups = "drop"
   ) %>%
   mutate(
@@ -846,8 +911,10 @@ tabla_fies_biv %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = "Nota: La tabla presenta el porcentaje de hogares que respondió afirmativamente a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según condición de beneficiario. Se excluyeron los valores perdidos (NA)."
-  ) %>%
+    source_note = paste0(
+      "Nota: La tabla presenta el porcentaje estimado de hogares que respondió afirmativamente a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según condición de beneficiario, aplicando el factor de expansión de la ENAHO 2025. ",
+      "Los porcentajes se calcularon sobre las respuestas válidas de cada ítem. Se excluyeron los valores perdidos (NA)."
+    )) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_beneficiario_fies8.html"
   )
@@ -889,8 +956,9 @@ grafico_biv_fies <- tabla_fies_biv %>%
     fill = "Beneficiario de programa",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta el porcentaje de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES),\n",
-      "según condición de beneficiario. Los porcentajes se calcularon sobre las respuestas válidas de cada ítem. Se excluyeron los valores perdidos (NA)."
+      "Nota: El gráfico presenta el porcentaje estimado de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES),\n",
+      "según condición de beneficiario, aplicando el factor de expansión de la ENAHO 2025. ",
+      "Los porcentajes se calcularon sobre las respuestas válidas de cada ítem; se excluyeron los valores perdidos (NA)."
     )
   ) +
   theme_minimal() +
@@ -916,7 +984,7 @@ print(grafico_biv_fies)
 ggsave(
   "03_outputs/explorar_grafico_biv_beneficiario_fies.png",
   plot = grafico_biv_fies,
-  width = 12,
+  width = 14,
   height = 8,
   dpi = 300,
   bg = "white"
@@ -932,14 +1000,16 @@ tabla_ecivil_sexo <- enaho_biv %>%
     !is.na(ecivil_jefe),
     !is.na(sexo_jefe)
   ) %>%
-  count(ecivil_jefe, sexo_jefe) %>%
+  group_by(ecivil_jefe, sexo_jefe) %>%
+  summarise(
+    n = sum(factor07, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   group_by(ecivil_jefe) %>%
   mutate(
     porcentaje = round(n / sum(n) * 100, 1)
   ) %>%
   ungroup()
-
-print(tabla_ecivil_sexo)
 
 # Tabla gt
 tabla_ecivil_sexo %>%
@@ -976,11 +1046,8 @@ tabla_ecivil_sexo %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = paste0("Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada categoría de estado civil (n = ",
-      sum(tabla_ecivil_sexo$n),
-      " hogares)."
-      )
-    )  %>%
+    source_note = "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada categoría de estado civil, aplicando el factor de expansión de la ENAHO 2025."
+  ) %>%
       gtsave(
         "03_outputs/explorar_tabla_biv_ecivil_sexo.html"
       )
@@ -1021,9 +1088,7 @@ grafico_ecivil_sexo <- tabla_ecivil_sexo %>%
     fill = "Sexo del jefe del hogar",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada categoría de estado civil (n = ",
-      sum(tabla_ecivil_sexo$n),
-      " hogares)."
+      "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada categoría de estado civil, aplicando el factor de expansión de la ENAHO 2025."
     )
   ) +
   theme_minimal() +
@@ -1046,11 +1111,10 @@ grafico_ecivil_sexo <- tabla_ecivil_sexo %>%
 
 print(grafico_ecivil_sexo)
 
-
 ggsave(
   "03_outputs/explorar_biv_ecivil_sexo.png",
   plot = grafico_ecivil_sexo,
-  width = 10,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -1058,20 +1122,22 @@ ggsave(
 
 # 8.2 Sexo del jefe × dominio geográfico ----
 
-# Tabla de frecuencias
+# Tabla de frecuencias ponderadas
 tabla_sexo_dominio <- enaho_biv %>%
   filter(
     !is.na(sexo_jefe),
     !is.na(dominio)
   ) %>%
-  count(dominio, sexo_jefe) %>%
+  group_by(dominio, sexo_jefe) %>%
+  summarise(
+    n = sum(factor07, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   group_by(dominio) %>%
   mutate(
     porcentaje = round(n / sum(n) * 100, 1)
   ) %>%
   ungroup()
-
-print(tabla_sexo_dominio)
 
 # Tabla gt
 tabla_sexo_dominio %>%
@@ -1108,11 +1174,7 @@ tabla_sexo_dominio %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = paste0(
-      "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada dominio geográfico (n = ",
-      sum(tabla_sexo_dominio$n),
-      " hogares)."
-    )
+    source_note = "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada dominio geográfico, aplicando el factor de expansión de la ENAHO 2025."
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_sexo_dominio.html"
@@ -1154,9 +1216,7 @@ grafico_sexo_dominio <- tabla_sexo_dominio %>%
     fill = "Sexo del jefe del hogar",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada dominio geográfico (n = ",
-      sum(tabla_sexo_dominio$n),
-      " hogares)."
+      "Nota: Los porcentajes representan la distribución del sexo del jefe del hogar dentro de cada dominio geográfico, aplicando el factor de expansión de la ENAHO 2025."
     )
   ) +
   theme_minimal() +
@@ -1183,11 +1243,10 @@ grafico_sexo_dominio <- tabla_sexo_dominio %>%
 
 print(grafico_sexo_dominio)
 
-
 ggsave(
   "03_outputs/explorar_biv_sexo_dominio.png",
   plot = grafico_sexo_dominio,
-  width = 12,
+  width = 14,
   height = 7,
   dpi = 300,
   bg = "white"
@@ -1195,31 +1254,28 @@ ggsave(
 
 # 8.3 Edad × sexo del jefe del hogar ----
 
-# Tabla de estadísticas descriptivas
-tabla_edad_sexo <- enaho_biv %>%
-  filter(
-    !is.na(edad_jefe),
-    !is.na(sexo_jefe)
+# Tabla de edad promedio estimada por sexo
+tabla_edad_sexo <- svyby(
+  ~edad_jefe,
+  ~sexo_jefe,
+  enaho_diseno,
+  svymean,
+  na.rm = TRUE,
+  keep.var = FALSE
+) %>%
+  rename(
+    "Sexo del jefe del hogar" = sexo_jefe,
+    "Edad promedio (años)" = statistic
   ) %>%
-  group_by(sexo_jefe) %>%
-  summarise(
-    N = n(),
-    media = round(mean(edad_jefe), 1),
-    mediana = median(edad_jefe),
-    de = round(sd(edad_jefe), 1),
-    minimo = min(edad_jefe),
-    maximo = max(edad_jefe),
-    .groups = "drop"
+  mutate(
+    `Edad promedio (años)` = round(`Edad promedio (años)`, 1)
   )
-
-print(tabla_edad_sexo)
-
 
 # Tabla gt
 tabla_edad_sexo %>%
   gt() %>%
   tab_header(
-    title = "Estadísticos descriptivos de la edad del jefe del hogar según sexo",
+    title = "Edad promedio del jefe del hogar según sexo",
     subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025"
   ) %>%
   tab_style(
@@ -1233,15 +1289,6 @@ tabla_edad_sexo %>%
     ),
     locations = cells_column_labels()
   ) %>%
-  cols_label(
-    sexo_jefe = "Sexo del jefe del hogar",
-    N = "Número de hogares",
-    media = "Media (años)",
-    mediana = "Mediana (años)",
-    de = "Desviación estándar",
-    minimo = "Mínimo (años)",
-    maximo = "Máximo (años)"
-  ) %>%
   cols_align(
     align = "center",
     columns = everything()
@@ -1250,19 +1297,14 @@ tabla_edad_sexo %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = paste0(
-      "Nota: Los estadísticos descriptivos corresponden a la edad del jefe del hogar según sexo (n = ",
-      sum(tabla_edad_sexo$N),
-      " hogares)."
-    )
+    source_note = "Nota: La edad promedio estimada corresponde al jefe del hogar según sexo, aplicando el factor de expansión de la ENAHO 2025."
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_edad_sexo.html"
   )
 
-
 # Boxplot
-grafico_edad_sexo <- enaho_biv %>%
+grafico_edad_sexo <- enaho_2025 %>%
   filter(
     !is.na(edad_jefe),
     !is.na(sexo_jefe)
@@ -1290,9 +1332,7 @@ grafico_edad_sexo <- enaho_biv %>%
     y = "Edad del jefe del hogar (años cumplidos)",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta la distribución de la edad del jefe del hogar según sexo (n = ",
-      sum(tabla_edad_sexo$N),
-      " hogares)."
+      "Nota: El gráfico presenta la distribución muestral de la edad del jefe del hogar según sexo."
     )
   ) +
   theme_minimal() +
@@ -1314,41 +1354,57 @@ grafico_edad_sexo <- enaho_biv %>%
 
 print(grafico_edad_sexo)
 
-
 ggsave(
   "03_outputs/explorar_biv_edad_sexo.png",
   plot = grafico_edad_sexo,
-  width = 10,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
 )
 
 # 8.4 Sexo del jefe × condición de beneficiario ----
-# Se utiliza la base enaho_biv creada previamente,
-# que incorpora la condición de beneficiario (Sí/No).
 
-# Tabla de frecuencias
-tabla_sexo_beneficiario <- enaho_biv %>%
-  filter(
-    !is.na(sexo_jefe),
-    !is.na(beneficiario)
+# Se analiza la relación entre el sexo del jefe del hogar y la condición de beneficiario
+# de programas de asistencia alimentaria. Los porcentajes se calculan dentro de cada
+# categoría de sexo del jefe del hogar, permitiendo comparar la distribución de hogares
+# beneficiarios y no beneficiarios.
+#
+# Las estimaciones incorporan el factor de expansión de la ENAHO 2025 para representar
+# el número de hogares a nivel poblacional. La cantidad de hogares representados puede
+# variar respecto a otros análisis debido a la exclusión de valores perdidos (NA)
+# en las variables utilizadas en el cruce.
+
+# Diseño muestral para análisis bivariados
+enaho_diseno_biv <- svydesign(
+  ids = ~1,
+  weights = ~factor07,
+  data = enaho_biv
+)
+
+# Tabla de frecuencias ponderada
+tabla_sexo_beneficiario <- svytable(
+  ~sexo_jefe + beneficiario,
+  enaho_diseno_biv
+) %>%
+  as.data.frame() %>%
+  rename(
+    sexo_jefe = sexo_jefe,
+    beneficiario = beneficiario,
+    N = Freq
   ) %>%
-  count(sexo_jefe, beneficiario) %>%
   group_by(sexo_jefe) %>%
   mutate(
-    porcentaje = round(n / sum(n) * 100, 1)
+    porcentaje = round(N / sum(N) * 100, 1)
   ) %>%
   ungroup()
 
-print(tabla_sexo_beneficiario)
-
-# Tabla gt 
+# Tabla gt
 tabla_sexo_beneficiario %>%
   rename(
     "Sexo del jefe del hogar" = sexo_jefe,
     "Condición de beneficiario" = beneficiario,
-    "Número de hogares" = n,
+    "Hogares representados" = N,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -1369,17 +1425,19 @@ tabla_sexo_beneficiario %>%
   ) %>%
   cols_align(
     align = "center",
-    columns = c(
-      "Número de hogares",
-      "Porcentaje (%)"
-    )
+    columns = everything()
   ) %>%
   tab_source_note(
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: Los porcentajes se calcularon dentro de cada categoría de sexo del jefe del hogar. Se excluyeron los valores perdidos (NA)."
+      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de sexo del jefe del hogar. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA) en las variables del cruce. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_sexo_beneficiario$N)), big.mark = ","),
+      "."
     )
   ) %>%
   gtsave(
@@ -1418,7 +1476,9 @@ grafico_sexo_beneficiario <- tabla_sexo_beneficiario %>%
     fill = "Beneficiario de programa",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: Los porcentajes se calcularon dentro de cada categoría de sexo del jefe del hogar."
+      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de sexo del jefe del hogar.\n",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA) en las variables del cruce."
     )
   ) +
   theme_minimal() +
@@ -1445,7 +1505,7 @@ print(grafico_sexo_beneficiario)
 ggsave(
   "03_outputs/explorar_biv_sexo_beneficiario.png",
   plot = grafico_sexo_beneficiario,
-  width = 10,
+  width = 14,
   height = 6,
   dpi = 300,
   bg = "white"
@@ -1453,31 +1513,38 @@ ggsave(
 
 # 8.5 Estado civil del jefe × condición de beneficiario ----
 
-# Se utiliza la base enaho_biv creada previamente,
-# que incorpora la condición de beneficiario (Sí/No).
+# Se analiza la relación entre el estado civil del jefe del hogar y la condición
+# de beneficiario de programas de asistencia alimentaria. Los porcentajes se calculan
+# dentro de cada categoría de estado civil, permitiendo comparar la distribución de
+# hogares beneficiarios y no beneficiarios.
+#
+# Las estimaciones incorporan el factor de expansión de la ENAHO 2025 para representar
+# hogares a nivel poblacional. La cantidad de hogares representados puede variar debido
+# a la exclusión de valores perdidos (NA) en las variables utilizadas en el cruce.
 
-# Tabla de frecuencias
-tabla_ecivil_beneficiario <- enaho_biv %>%
-  filter(
-    !is.na(ecivil_jefe),
-    !is.na(beneficiario)
+# Tabla de frecuencias ponderada
+tabla_ecivil_beneficiario <- svytable(
+  ~ecivil_jefe + beneficiario,
+  enaho_diseno_biv
+) %>%
+  as.data.frame() %>%
+  rename(
+    ecivil_jefe = ecivil_jefe,
+    beneficiario = beneficiario,
+    N = Freq
   ) %>%
-  count(ecivil_jefe, beneficiario) %>%
   group_by(ecivil_jefe) %>%
   mutate(
-    porcentaje = round(n / sum(n) * 100, 1)
+    porcentaje = round(N / sum(N) * 100, 1)
   ) %>%
   ungroup()
-
-print(tabla_ecivil_beneficiario)
-
 
 # Tabla gt
 tabla_ecivil_beneficiario %>%
   rename(
     "Estado civil del jefe del hogar" = ecivil_jefe,
     "Condición de beneficiario" = beneficiario,
-    "Número de hogares" = n,
+    "Hogares representados" = N,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -1487,8 +1554,7 @@ tabla_ecivil_beneficiario %>%
   ) %>%
   tab_style(
     style = cell_text(weight = "bold"),
-    locations = cells_title(groups = "title"
-    )
+    locations = cells_title(groups = "title")
   ) %>%
   tab_style(
     style = list(
@@ -1500,7 +1566,7 @@ tabla_ecivil_beneficiario %>%
   cols_align(
     align = "center",
     columns = c(
-      "Número de hogares",
+      "Hogares representados",
       "Porcentaje (%)"
     )
   ) %>%
@@ -1509,15 +1575,17 @@ tabla_ecivil_beneficiario %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de estado civil del jefe del hogar (n = ",
-      sum(tabla_ecivil_beneficiario$n),
-      " hogares)."
+      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de estado civil del jefe del hogar. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA) en las variables del cruce. ",
+      "Total estimado de hogares representados: ",
+      format(round(sum(tabla_ecivil_beneficiario$N)), big.mark = ","),
+      "."
     )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_ecivil_beneficiario.html"
   )
-
 
 # Gráfico de barras
 grafico_ecivil_beneficiario <- tabla_ecivil_beneficiario %>%
@@ -1551,9 +1619,9 @@ grafico_ecivil_beneficiario <- tabla_ecivil_beneficiario %>%
     fill = "Beneficiario de programa",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de estado civil del jefe del hogar (n = ",
-      sum(tabla_ecivil_beneficiario$n),
-      " hogares)."
+      "Nota: Los porcentajes representan la distribución de la condición de beneficiario dentro de cada categoría de estado civil del jefe del hogar.\n",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA) en las variables del cruce."
     )
   ) +
   theme_minimal() +
@@ -1580,11 +1648,10 @@ grafico_ecivil_beneficiario <- tabla_ecivil_beneficiario %>%
 
 print(grafico_ecivil_beneficiario)
 
-
 ggsave(
   "03_outputs/explorar_biv_ecivil_beneficiario.png",
   plot = grafico_ecivil_beneficiario,
-  width = 12,
+  width = 14,
   height = 7,
   dpi = 300,
   bg = "white"
@@ -1592,9 +1659,14 @@ ggsave(
 
 # 8.6 Sexo del jefe × inseguridad alimentaria (FIES) ----
 
-# Tabla de frecuencias bivariada
+# Se analiza la relación entre el sexo del jefe del hogar y las experiencias
+# de inseguridad alimentaria medidas mediante los ítems FIES.
+# Las estimaciones incorporan el factor de expansión de la ENAHO 2025.
+# Se excluyen los valores perdidos (NA) de cada ítem.
+
+# Tabla de frecuencias ponderada
 tabla_sexo_fies <- enaho_biv %>%
-  select(sexo_jefe, starts_with("fies_")) %>%
+  select(sexo_jefe, factor07, starts_with("fies_")) %>%
   pivot_longer(
     cols = starts_with("fies_"),
     names_to = "item",
@@ -1604,22 +1676,28 @@ tabla_sexo_fies <- enaho_biv %>%
     !is.na(sexo_jefe),
     !is.na(respuesta)
   ) %>%
-  group_by(sexo_jefe, item) %>%
+  group_by(sexo_jefe, item, respuesta) %>%
   summarise(
-    porcentaje = round(mean(respuesta == "Sí") * 100, 1),
+    N = sum(factor07),
     .groups = "drop"
   ) %>%
+  group_by(sexo_jefe, item) %>%
+  mutate(
+    porcentaje = round(N / sum(N) * 100, 1)
+  ) %>%
+  ungroup() %>%
+  filter(respuesta == "Sí") %>%
   mutate(
     item = etiquetas_fies[item]
   )
 
-print(tabla_sexo_fies)
-
 # Tabla gt
 tabla_sexo_fies %>%
+  select(sexo_jefe, item, N, porcentaje) %>%
   rename(
     "Sexo del jefe del hogar" = sexo_jefe,
     "Ítem FIES" = item,
+    "Hogares representados" = N,
     "Porcentaje (%)" = porcentaje
   ) %>%
   gt() %>%
@@ -1646,7 +1724,11 @@ tabla_sexo_fies %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = "Nota: La tabla presenta el porcentaje de hogares que respondió afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según sexo del jefe del hogar. Se excluyeron los valores perdidos (NA)."
+    source_note = paste0(
+      "Nota: La tabla presenta el porcentaje estimado de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según sexo del jefe del hogar. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA)."
+    )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_sexo_fies.html"
@@ -1677,6 +1759,9 @@ grafico_sexo_fies <- tabla_sexo_fies %>%
     )
   ) +
   coord_flip() +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.10))
+  ) +
   labs(
     title = "Experiencias de inseguridad alimentaria según sexo del jefe del hogar",
     subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
@@ -1685,7 +1770,9 @@ grafico_sexo_fies <- tabla_sexo_fies %>%
     fill = "Sexo del jefe del hogar",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta el porcentaje de hogares que respondió afirmativamente (\"Sí\") a cada ítem FIES \nsegún sexo del jefe del hogar. Se excluyeron los valores perdidos (NA)."
+      "Nota: El gráfico presenta el porcentaje estimado de hogares que respondieron afirmativamente (\"Sí\") a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES), según sexo del jefe del hogar. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA)."
     )
   ) +
   theme_minimal() +
@@ -1711,7 +1798,7 @@ print(grafico_sexo_fies)
 ggsave(
   "03_outputs/explorar_biv_sexo_fies.png",
   plot = grafico_sexo_fies,
-  width = 12,
+  width = 14,
   height = 8,
   dpi = 300,
   bg = "white"
@@ -1719,9 +1806,14 @@ ggsave(
 
 # 8.7 Edad del jefe × inseguridad alimentaria (FIES) ----
 
-# Tabla de estadísticas descriptivas
+# Se analiza la relación entre la edad del jefe del hogar y las experiencias
+# de inseguridad alimentaria medidas mediante los ítems FIES.
+# Las estimaciones incorporan el factor de expansión de la ENAHO 2025.
+# Se excluyen los valores perdidos (NA).
+
+# Tabla de estadísticas descriptivas ponderadas
 tabla_edad_fies <- enaho_biv %>%
-  select(edad_jefe, starts_with("fies_")) %>%
+  select(edad_jefe, factor07, starts_with("fies_")) %>%
   pivot_longer(
     cols = starts_with("fies_"),
     names_to = "item",
@@ -1733,24 +1825,28 @@ tabla_edad_fies <- enaho_biv %>%
   ) %>%
   group_by(item, respuesta) %>%
   summarise(
-    N = n(),
-    media = round(mean(edad_jefe), 1),
-    mediana = median(edad_jefe),
-    de = round(sd(edad_jefe), 1),
+    N = sum(factor07),
+    media = round(weighted.mean(edad_jefe, factor07), 1),
+    mediana = median(rep(edad_jefe, factor07)),
+    de = round(
+      sqrt(
+        sum(factor07 * (edad_jefe - weighted.mean(edad_jefe, factor07))^2) /
+          sum(factor07)
+      ),
+      1
+    ),
     .groups = "drop"
   ) %>%
   mutate(
     item = etiquetas_fies[item]
   )
 
-print(tabla_edad_fies)
-
 # Tabla gt
 tabla_edad_fies %>%
   rename(
     "Ítem FIES" = item,
     "Respuesta" = respuesta,
-    "Número de hogares" = N,
+    "Hogares representados" = N,
     "Media (años)" = media,
     "Mediana (años)" = mediana,
     "Desviación estándar" = de
@@ -1779,7 +1875,11 @@ tabla_edad_fies %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = "Nota: La tabla presenta los estadísticos descriptivos de la edad del jefe del hogar según respuesta afirmativa o negativa a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES). Se excluyeron los valores perdidos (NA)."
+    source_note = paste0(
+      "Nota: La tabla presenta los estadísticos descriptivos estimados de la edad del jefe del hogar según respuesta a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES). ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Se excluyeron los valores perdidos (NA)."
+    )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_edad_fies.html"
@@ -1787,7 +1887,7 @@ tabla_edad_fies %>%
 
 # Boxplot
 grafico_edad_fies <- enaho_biv %>%
-  select(edad_jefe, starts_with("fies_")) %>%
+  select(edad_jefe, factor07, starts_with("fies_")) %>%
   pivot_longer(
     cols = starts_with("fies_"),
     names_to = "item",
@@ -1823,7 +1923,8 @@ grafico_edad_fies <- enaho_biv %>%
     fill = "Respuesta FIES",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta la distribución de la edad del jefe del hogar según respuesta a cada ítem FIES. Se excluyeron los valores perdidos (NA)."
+      "Nota: El gráfico presenta la distribución de la edad del jefe del hogar según respuesta a cada ítem de la Escala de Experiencia de Inseguridad Alimentaria (FIES). ",
+      "Se excluyeron los valores perdidos (NA)."
     )
   ) +
   theme_minimal() +
@@ -1849,13 +1950,18 @@ print(grafico_edad_fies)
 ggsave(
   "03_outputs/explorar_biv_edad_fies.png",
   plot = grafico_edad_fies,
-  width = 12,
+  width = 14,
   height = 8,
   dpi = 300,
   bg = "white"
 )
 
 # 8.8 Dominio geográfico × programas de asistencia alimentaria ----
+
+# Se analiza la distribución de programas de asistencia alimentaria según dominio geográfico.
+# Las estimaciones incorporan el factor de expansión de la ENAHO 2025.
+# Cada programa se analiza de manera independiente, por lo que un hogar puede registrar
+# más de un programa de asistencia alimentaria.
 
 # Etiqueta de programas
 etiquetas_programas <- c(
@@ -1870,10 +1976,11 @@ etiquetas_programas <- c(
   "prog_otro3"        = "Otro programa 3"
 )
 
-# Tabla de frecuencias
+# Tabla de frecuencias ponderada
 tabla_dominio_programas <- enaho_biv %>%
   select(
     dominio,
+    factor07,
     starts_with("prog_"),
     -prog_no_recibio
   ) %>%
@@ -1888,18 +1995,22 @@ tabla_dominio_programas <- enaho_biv %>%
   ) %>%
   group_by(dominio, programa) %>%
   summarise(
-    porcentaje = round(mean(respuesta == "Sí") * 100, 1),
+    hogares_si = sum(factor07[respuesta == "Sí"], na.rm = TRUE),
+    hogares_total = sum(factor07, na.rm = TRUE),
+    porcentaje = round(hogares_si / hogares_total * 100, 1),
     .groups = "drop"
   ) %>%
   mutate(
     programa = recode(programa, !!!etiquetas_programas)
   )
 
-print(tabla_dominio_programas)
-
-
 # Tabla gt
 tabla_dominio_programas %>%
+  select(
+    dominio,
+    programa,
+    porcentaje
+  ) %>%
   rename(
     "Dominio geográfico" = dominio,
     "Programa de asistencia alimentaria" = programa,
@@ -1930,13 +2041,15 @@ tabla_dominio_programas %>%
   ) %>%
   tab_source_note(
     source_note = paste0(
-      "Nota: La tabla presenta el porcentaje de hogares que reportó recibir cada programa de asistencia alimentaria según dominio geográfico. Los porcentajes se calcularon sobre las respuestas válidas de cada programa y se excluyeron los valores perdidos (NA)."
+      "Nota: La tabla presenta el porcentaje estimado de hogares que reportó recibir cada programa de asistencia alimentaria según dominio geográfico. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Cada programa se considera de manera independiente, por lo que un hogar puede registrar más de un programa. ",
+      "Se excluyeron los valores perdidos (NA)."
     )
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_dominio_programas.html"
   )
-
 
 # Gráfico de barras
 programas_principales <- c(
@@ -1950,7 +2063,6 @@ tabla_dominio_programas_grafico <- tabla_dominio_programas %>%
   filter(
     programa %in% programas_principales
   )
-
 
 grafico_dominio_programas <- tabla_dominio_programas_grafico %>%
   ggplot(
@@ -1980,7 +2092,10 @@ grafico_dominio_programas <- tabla_dominio_programas_grafico %>%
     fill = "Programa de asistencia alimentaria",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta el porcentaje de hogares que reportó recibir los principales programas de asistencia alimentaria según dominio geográfico. Se excluyeron los valores perdidos (NA)."
+      "Nota: El gráfico presenta el porcentaje estimado de hogares que reportó recibir los principales programas de asistencia alimentaria según dominio geográfico. ",
+      "Las estimaciones corresponden a hogares representados mediante el factor de expansión de la ENAHO 2025. ",
+      "Cada programa se considera de manera independiente, por lo que un hogar puede registrar más de un programa. ",
+      "Se excluyeron los valores perdidos (NA)."
     )
   ) +
   theme_minimal() +
@@ -2001,14 +2116,12 @@ grafico_dominio_programas <- tabla_dominio_programas_grafico %>%
     legend.position = "bottom"
   )
 
-
 print(grafico_dominio_programas)
-
 
 ggsave(
   "03_outputs/explorar_biv_dominio_programas.png",
   plot = grafico_dominio_programas,
-  width = 12,
+  width = 14,
   height = 8,
   dpi = 300,
   bg = "white"
@@ -2016,12 +2129,19 @@ ggsave(
 
 # 8.9 Sexo del jefe × programas de asistencia alimentaria ----
 
-# Tabla de frecuencias
-tabla_sexo_programas <- enaho_biv %>%
+# Se analiza la relación entre el sexo del jefe del hogar y la recepción
+# de programas de asistencia alimentaria. Las estimaciones incorporan el
+# factor de expansión de la ENAHO 2025 para representar hogares.
+#
+# Se excluyen los valores perdidos (NA) en las variables utilizadas
+# para cada cruce.
+
+# Base larga de programas
+base_sexo_programas <- enaho_biv %>%
   select(
     sexo_jefe,
-    starts_with("prog_"),
-    -prog_no_recibio
+    factor07,
+    starts_with("prog_")
   ) %>%
   pivot_longer(
     cols = starts_with("prog_"),
@@ -2030,19 +2150,34 @@ tabla_sexo_programas <- enaho_biv %>%
   ) %>%
   filter(
     !is.na(sexo_jefe),
-    !is.na(respuesta)
-  ) %>%
-  group_by(sexo_jefe, programa) %>%
-  summarise(
-    porcentaje = round(mean(respuesta == "Sí") * 100, 1),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    programa = recode(programa, !!!etiquetas_programas)
+    !is.na(respuesta),
+    programa != "prog_no_recibio"
   )
 
-print(tabla_sexo_programas)
+# Diseño muestral
+diseno_sexo_programas <- svydesign(
+  ids = ~1,
+  weights = ~factor07,
+  data = base_sexo_programas
+)
 
+# Estimaciones ponderadas
+tabla_sexo_programas <- svyby(
+  ~I(respuesta == "Sí"),
+  ~sexo_jefe + programa,
+  diseno_sexo_programas,
+  svymean,
+  na.rm = TRUE,
+  keep.var = FALSE
+) %>%
+  as.data.frame() %>%
+  rename(
+    porcentaje = `statistic.I(respuesta == "Sí")TRUE`
+  ) %>%
+  mutate(
+    porcentaje = round(porcentaje * 100, 1),
+    programa = recode(programa, !!!etiquetas_programas)
+  )
 
 # Tabla gt
 tabla_sexo_programas %>%
@@ -2075,12 +2210,11 @@ tabla_sexo_programas %>%
     source_note = "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI."
   ) %>%
   tab_source_note(
-    source_note = "Nota: La tabla presenta el porcentaje de hogares que reportó recibir cada programa de asistencia alimentaria según sexo del jefe del hogar. Los porcentajes se calcularon sobre las respuestas válidas de cada programa y se excluyeron los valores perdidos (NA)."
+    source_note = "Nota: La tabla presenta el porcentaje estimado de hogares que reportó recibir cada programa de asistencia alimentaria según sexo del jefe del hogar, aplicando el factor de expansión de la ENAHO 2025. Se excluyeron los valores perdidos (NA)."
   ) %>%
   gtsave(
     "03_outputs/explorar_tabla_biv_sexo_programas.html"
   )
-
 
 # Gráfico de barras
 grafico_sexo_programas <- tabla_sexo_programas %>%
@@ -2111,11 +2245,12 @@ grafico_sexo_programas <- tabla_sexo_programas %>%
     title = "Programas de asistencia alimentaria según sexo del jefe del hogar",
     subtitle = "Proyecto: Perfil sociodemográfico de hogares beneficiarios de programas de asistencia alimentaria en Perú, 2025",
     x = "Sexo del jefe del hogar",
-    y = "Porcentaje de hogares (%)",
+    y = "Porcentaje estimado de hogares (%)",
     fill = "Programa de asistencia alimentaria",
     caption = paste0(
       "Fuente: Elaboración propia con datos de la Encuesta Nacional de Hogares (ENAHO) 2025, INEI.\n",
-      "Nota: El gráfico presenta el porcentaje de hogares que reportó recibir cada programa de asistencia alimentaria según sexo del jefe del hogar. Se excluyeron los valores perdidos (NA)."
+      "Nota: El gráfico presenta el porcentaje estimado de hogares que reportó recibir cada programa de asistencia alimentaria según sexo del jefe del hogar, aplicando el factor de expansión de la ENAHO 2025. \n", 
+      "Se excluyeron los valores perdidos (NA)."
     )
   ) +
   theme_minimal() +
@@ -2138,17 +2273,11 @@ grafico_sexo_programas <- tabla_sexo_programas %>%
 
 print(grafico_sexo_programas)
 
-
 ggsave(
   "03_outputs/explorar_biv_sexo_programas.png",
   plot = grafico_sexo_programas,
-  width = 12,
+  width = 14,
   height = 8,
   dpi = 300,
   bg = "white"
 )
-
-# 9. Exportar base con variables transformadas ----
-# Se exporta la con variables transformadas y renombrada como cuarta versión
-# del dataset procesado.
-write_parquet(enaho_2025, "01_datos/procesados/enaho_2025_v4.parquet")
