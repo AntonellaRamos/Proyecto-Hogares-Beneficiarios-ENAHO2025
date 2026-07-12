@@ -117,16 +117,19 @@ En menor proporción se encuentran los Comedores Populares (3.3%), mientras que 
 
 ## La preocupación como experiencia más extendida: respuestas por ítem
 
-**Figura 6**
-```{r Gráfico de barras: Hogares beneficiarios por programa de asistencia alimentaria"}
-knitr::include_graphics("../03_outputs/explorar_grafico_fies.png")
+**Tabla 4**
+```{r Tabla de frecuencias: Porcentaje de hogares con respuesta afirmativa por ítem FIES"}
+htmltools::includeHTML("../03_outputs/explorar_tabla_fies.html")
 ```
 El análisis de los componentes de la Escala de Experiencia de Inseguridad Alimentaria (FIES) muestra un patrón decreciente según la severidad de las experiencias reportadas por los hogares beneficiarios de programas asistenciales en el Perú (2025). Los indicadores asociados a preocupaciones y restricciones en la calidad de la alimentación presentan las mayores prevalencias: el 50.6% de los hogares estima haber experimentado preocupación por la falta de alimentos, seguido por dificultades para acceder a una alimentación saludable (43.2%) y una menor variedad de alimentos (40.4%). 
 
 En contraste, las experiencias de mayor severidad presentan menores proporciones, aunque reflejan la persistencia de situaciones críticas: el 13.0% reporta haberse quedado sin alimentos y el 5.2% haber pasado un día entero sin comer. En conjunto, los resultados muestran que los hogares beneficiarios presentan distintos niveles de inseguridad alimentaria, desde preocupaciones sobre el acceso hasta episodios de privación alimentaria severa.
 
-
-
+**Figura 6**
+```{r Gráfico de barras: Porcentaje de hogares con respuesta afirmativa por ítem FIES"}
+knitr::include_graphics("../03_outputs/explorar_grafico_fies.png")
+```
+El gráfico muestra un patrón general decreciente según la severidad de las experiencias de inseguridad alimentaria. Los indicadores asociados a preocupación por el acceso y restricciones en la calidad de la dieta concentran las mayores proporciones de respuesta afirmativa. Dentro de las experiencias relacionadas con la reducción en la cantidad de alimentos, destaca que comer menos de lo habitual (FIES 5) presenta una mayor frecuencia que omitir comidas (FIES 4), lo que sugiere que una proporción de hogares experimenta ajustes en su consumo alimentario antes de llegar a situaciones de mayor restricción. Finalmente, los indicadores asociados a privaciones más severas, como quedarse sin alimentos o pasar un día entero sin comer, presentan las menores proporciones.
 
 
 
