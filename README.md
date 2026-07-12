@@ -176,3 +176,64 @@ Las estimaciones en todos los cruces incorporan el factor de expansión mediante
 Los outputs se encuentran en `03_outputs/`:
 
 - En total, se generaron 32 outputs en formato `.png` (gráficos) y `.html` (tablas), además del informe descriptivo (`explorar_informe_descriptivo.html`). El script utilizado para generar el informe se encuentra en `02_scripts/`.
+
+---
+
+## CLASIFICAR
+
+La clasificación se realizó en dos archivos: `06_clasificacion.R` (recodificación de variables existentes, construcción de variables derivadas y definición de tipologías) y `07_reporte_variables_recodificadas.Rmd` (reporte de las variables recodificadas y categorías construidas en HTML). Las transformaciones se basan en criterios metodológicos externos (estándares INEI y metodología FAO) para garantizar comparabilidad.
+
+### Recodificaciones
+
+**Grupos de edad del jefe de hogar** (`grupo_edad_jefe`): La variable continua `edad_jefe` se recodificó en tres grupos usando los cortes estándar del INEI: joven (< 30 años), adulto (30-59 años) y adulto mayor (60 años o más).
+
+**Estado civil agrupado** (`ecivil_agrupado`): Las seis categorías originales de `ecivil_jefe` se reagruparon en tres: en pareja (casado/a y conviviente), sin pareja por ruptura o viudez (separado/a, viudo/a, divorciado/a) y soltero/a. La reagrupación responde a la distinción sustantiva entre hogares con jefatura de pareja, hogares que atravesaron una ruptura y hogares de jefatura individual nunca emparejada.
+
+### Variable compuesta: condición de beneficiario
+
+Se construyó una variable dicotómica (`beneficiario`) que identifica si el hogar recibió al menos uno de los nueve programas de asistencia alimentaria registrados. Se excluyó `prog_no_recibio` porque corresponde a una categoría de no recepción y no a un programa alimentario. Los hogares con valores faltantes en todas las variables de programas conservan NA, evitando asumir ausencia de recepción.
+
+### Índice FIES
+
+Se construyó un índice sumativo (`fies_score`) basado parcialmente en la metodología FIES desarrollada por la FAO. Siguiendo su enfoque general, los 8 ítems de experiencia de inseguridad alimentaria fueron recodificados en variables binarias (1 = respuesta afirmativa, 0 = respuesta negativa) y agregados en un puntaje de severidad con rango de 0 a 8. 
+
+Los hogares con valores faltantes en alguno de los ítems conservan NA, debido a que se requiere información completa para obtener una clasificación válida. A partir del puntaje acumulado se construyó la variable categórica `fies_nivel` con tres niveles de inseguridad alimentaria:
+
+- **0-1**: Seguridad alimentaria
+- **2-3**: Inseguridad alimentaria moderada
+- **4-8**: Inseguridad alimentaria severa
+
+- *Nota metodológica: Estos puntos de corte corresponden a una clasificación operativa utilizada para el análisis descriptivo del estudio y no replican los procedimientos completos de calibración y establecimiento de umbrales oficiales de la escala FIES. Para mayor referencia sobre la metodología FIES, consultar la documentación de la [FAO]([https://proyectos.inei.gob.pe/iinei/srienaho/Descarga/DocumentosMetodologicos/2025-37/Diccionario.pdf?utm_source](https://pmc.ncbi.nlm.nih.gov/articles/PMC6121128/#sec2).*
+
+### Tipologías
+
+Se construyeron cuatro tipologías MECE (mutuamente excluyentes y colectivamente exhaustivas). Los hogares con NA en alguna de las variables que componen la tipología quedan excluidos de la clasificación.
+
+**Tipología 1: Beneficiario × inseguridad alimentaria**: Cruza la condición de beneficiario con el nivel FIES, generando 6 tipos. Permite identificar hogares que reciben programas pese a no presentar inseguridad alimentaria severa, y hogares con inseguridad severa sin cobertura de programas.
+
+**Tipología 2: Perfil sociodemográfico del jefe de hogar**: Cruza sexo con grupo de edad, generando 6 tipos (hombre/mujer × joven/adulto/adulto mayor). Permite describir perfiles diferenciados de jefatura dentro de los hogares de la muestra.
+
+**Tipología 3: Cobertura territorial de programas**: Cruza dominio geográfico con condición de beneficiario, generando 16 combinaciones (8 dominios × 2 condiciones). Permite identificar diferencias territoriales en la presencia de hogares beneficiarios y no beneficiarios de programas alimentarios.
+
+**Tipología 4: Vulnerabilidad alimentaria territorial**: Cruza dominio geográfico, nivel FIES y condición de beneficiario, generando hasta 48 combinaciones posibles (8 dominios × 3 niveles FIES × 2 condiciones). Permite identificar la distribución territorial de los distintos niveles de inseguridad alimentaria según cobertura de programas.
+
+### Verificación de las tipologías
+
+La verificación de las tipologías incluyó la revisión de la cobertura de las categorías generadas, la presencia de casos en cada combinación y la proporción de hogares excluidos por valores faltantes en las variables utilizadas.
+
+Las tipologías construidas presentan categorías con observaciones en la muestra analizada; sin embargo, no todas muestran una distribución homogénea entre sus categorías. Algunas combinaciones presentan menor número de casos, especialmente aquellas que incorporan niveles severos de inseguridad alimentaria y condición de beneficiario dentro de determinados dominios territoriales.
+
+Asimismo, los hogares con información faltante en alguna de las variables de construcción fueron excluidos de la clasificación. Por ello, las tipologías se interpretan como categorías descriptivas de los hogares clasificados y no como estimaciones poblacionales.
+
+### Outputs generados
+
+Los outputs se encuentran en `03_outputs/`:
+
+| Archivo | Descripción |
+|---|---|
+| `clasificar_tabla_tipologia1.html` | Distribución de hogares según condición de beneficiario e inseguridad alimentaria |
+| `clasificar_tabla_tipologia2.html` | Distribución de hogares según perfil sociodemográfico del jefe de hogar |
+| `clasificar_tabla_tipologia3.html` | Distribución de hogares según dominio geográfico y condición de beneficiario |
+| `clasificar_tabla_tipologia4.html` | Distribución de hogares según dominio geográfico, nivel de inseguridad alimentaria y condición de beneficiario |
+
+Adicionalmente, se generó el reporte `clasificar_reporte_variables_recodificadas.html`, que integra las tablas de las variables recodificadas y categorías derivadas construidas. El script utilizado para generar este reporte se encuentra en `02_scripts/`.
