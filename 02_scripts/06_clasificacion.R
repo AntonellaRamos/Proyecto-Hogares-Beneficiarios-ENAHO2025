@@ -13,3 +13,6 @@
 library(tidyverse)
 library(arrow)
 library(gt)
+
+# 2. Cargar base explorada ----
+enaho_2025 <- read_parquet("01_datos/procesados/enaho_2025_v5.parquet")
