@@ -115,3 +115,41 @@ tipo_variables <- tibble(
     )
   ) %>%
   select(variable, tipo_variable)
+
+# 7. Valores posibles y significados ----
+valores_variables <- map_dfr(
+  names(enaho_codebook_2025),
+  function(var){
+    
+    x <- enaho_codebook_2025[[var]]
+    
+    if(var == "factor07"){
+      
+      tibble(
+        variable = var,
+        valores_posibles = "Variable continua: factor de expansión anual a nivel hogar"
+      )
+      
+    } else if(is.factor(x)){
+      
+      tibble(
+        variable = var,
+        valores_posibles = paste(
+          levels(x),
+          collapse = " | "
+        )
+      )
+      
+    } else {
+      
+      tibble(
+        variable = var,
+        valores_posibles = paste(
+          min(x, na.rm = TRUE),
+          "a",
+          max(x, na.rm = TRUE)
+        )
+      )
+    }
+  }
+)
