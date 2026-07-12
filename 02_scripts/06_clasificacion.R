@@ -513,4 +513,4 @@ enaho_2025 %>%
 # 8. Exportar base clasificada ----
 # Se exporta la base clasifica y renombrada como sexta versión
 # del dataset procesado. 
-write_parquet(enaho, "01_datos/procesados/enaho_2025_v6.parquet")
+write_parquet(enaho_2025, "01_datos/procesados/enaho_2025_v6.parquet")
