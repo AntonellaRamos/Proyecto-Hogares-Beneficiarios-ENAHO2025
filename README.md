@@ -237,3 +237,35 @@ Los outputs se encuentran en `03_outputs/`:
 | `clasificar_tabla_tipologia4.html` | Distribución de hogares según dominio geográfico, nivel de inseguridad alimentaria y condición de beneficiario |
 
 Adicionalmente, se generó el reporte `clasificar_reporte_variables_recodificadas.html`, que integra las tablas de las variables recodificadas y categorías derivadas construidas. El script utilizado para generar este reporte se encuentra en `02_scripts/`.
+
+----
+
+## 6. DOCUMENTAR
+
+La documentación se realizó en el script `06_documentar.R` e incluyó la selección de variables analíticas, incorporación de metadatos, documentación de decisiones metodológicas y generación automatizada del codebook final.
+
+### Variables documentadas
+Se documentaron 14 variables correspondientes a las etapas de exploración, clasificación y construcción de índices y tipologías:
+
+- **Variables base exploradas**: `sexo_jefe`, `edad_jefe`, `ecivil_jefe`, `dominio`, `factor07`
+- **Variables recodificadas**: `grupo_edad_jefe`, `ecivil_agrupado`
+- **Variables compuestas**: `beneficiario`, `fies_score`, `fies_nivel`
+- **Tipologías**: `tipologia_1`, `tipologia_2`, `tipologia_3`, `tipologia_4`
+
+### Metadatos incorporados
+Para cada variable se documentó: etiqueta descriptiva (`var_label()`), fuente original en el diccionario ENAHO 2025, tipo de variable, valores posibles y decisión metodológica que justifica su construcción o recodificación. Los metadatos a nivel de estudio incluyen nombre del dataset, descripción de la submuestra y autoría.
+
+### Construcción del codebook
+El codebook se construyó manualmente en cuatro pasos:
+
+1. **Tipo de variable**: clasificación de cada variable como numérica, categórica o texto a partir de su clase en R.
+2. **Valores posibles**: para variables categóricas, los niveles del factor; para variables numéricas, el rango mínimo-máximo; para `factor07`, descripción textual.
+3. **Frecuencias y distribución**: conteo y porcentaje por categoría para todas las variables factor, incluyendo NAs como categoría explícita.
+4. **Ensamblaje**: integración de etiquetas descriptivas, tipo de variable, valores posibles, decisiones metodológicas y frecuencias en un único dataframe exportado como `.csv`.
+
+### Outputs generados
+Los outputs se encuentran en `03_outputs/documentar/`:
+
+| Archivo | Descripción |
+|---------|-------------|
+| `documentar_codebook_final_enaho_2025.csv` | Codebook final con etiquetas, tipos, valores posibles, fuentes y frecuencias de todas las variables documentadas |
