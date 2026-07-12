@@ -38,7 +38,7 @@ enaho_2025 <- enaho_2025 %>%
 sum(is.na(enaho_2025$grupo_edad_jefe))
 table(enaho_2025$grupo_edad_jefe)
 
-# 2.2 Estado civil agrupado ----
+# 3.2 Estado civil agrupado ----
 # En pareja / Sin pareja (ruptura/viudez) / Soltero/a
 enaho_2025 <- enaho_2025 %>%
   mutate(
@@ -80,3 +80,64 @@ enaho_2025 <- enaho_2025 %>%
 
 # Verificar
 table(enaho_2025$beneficiario, useNA = "ifany")
+
+# 5. Índice FIES ----
+# Se recodifican las respuestas FIES a valores binarios:
+# Sí = 1 (respuesta afirmativa de experiencia de inseguridad alimentaria)
+# No = 0
+# Los valores faltantes se mantienen como NA.
+#
+# El puntaje FIES corresponde a la suma de respuestas afirmativas
+# y toma valores entre 0 y 8. Si existe alguna respuesta faltante,
+# el puntaje final del hogar se mantiene como NA.
+#
+# Clasificación según metodología FIES:
+# 0-3  = Seguridad alimentaria
+# 4-6  = Inseguridad alimentaria moderada
+# 7-8  = Inseguridad alimentaria severa
+
+enaho_2025 <- enaho_2025 %>%
+  mutate(
+    across(
+      starts_with("fies_"),
+      ~ case_when(
+        . == "Sí" ~ 1,
+        . == "No" ~ 0,
+        TRUE      ~ NA_real_
+      ),
+      .names = "{.col}_num"
+    ),
+    fies_score = rowSums(
+      across(ends_with("_num")),
+      na.rm = FALSE
+    ),
+    fies_nivel = case_when(
+      is.na(fies_score) ~ NA_character_,
+      fies_score <= 3   ~ "Seguridad alimentaria",
+      fies_score <= 6   ~ "Inseguridad alimentaria moderada",
+      fies_score >= 7   ~ "Inseguridad alimentaria severa"
+    ),
+    fies_nivel = factor(
+      fies_nivel,
+      levels = c(
+        "Seguridad alimentaria",
+        "Inseguridad alimentaria moderada",
+        "Inseguridad alimentaria severa"
+      )
+    )
+  )
+
+# Verificar
+enaho_2025 %>%
+  summarise(
+    across(
+      ends_with("_num"),
+      ~ paste(names(table(.)), collapse = ", ")
+    )
+  )
+
+# Verificar cortes bien aplicados
+enaho_2025 %>%
+  select(fies_score, fies_nivel) %>%
+  distinct() %>%
+  arrange(fies_score)
