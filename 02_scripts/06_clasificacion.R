@@ -57,3 +57,26 @@ enaho_2025 <- enaho_2025 %>%
 sum(is.na(enaho_2025$ecivil_agrupado))
 table(enaho_2025$ecivil_agrupado)
 
+# 4. Variable compuesta: condición de beneficiario ----
+# Variable dicotómica: recibió al menos un programa alimentario.
+# Se excluye prog_no_recibio (categoría de no recepción, no programa).
+# Hogares con NA en todas las variables de programas. 
+
+programas <- c(
+  "prog_vaso_leche", "prog_comedor", "prog_desayuno_esc",
+  "prog_almuerzo_esc", "prog_cuna_mas", "prog_canasta",
+  "prog_otro1", "prog_otro2", "prog_otro3"
+)
+
+enaho_2025 <- enaho_2025 %>%
+  mutate(
+    beneficiario = case_when(
+      if_any(all_of(programas), ~ . == "Sí") ~ "Sí",
+      if_all(all_of(programas), ~ is.na(.))  ~ NA_character_,
+      TRUE                                    ~ "No"
+    ),
+    beneficiario = factor(beneficiario, levels = c("Sí", "No"))
+  )
+
+# Verificar
+table(enaho_2025$beneficiario, useNA = "ifany")
