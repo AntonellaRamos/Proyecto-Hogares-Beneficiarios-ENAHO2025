@@ -101,7 +101,7 @@ metadata(enaho_codebook_2025)$creator     <- "Antonella Ramos"
 # Guardamos con metadatos
 write_parquet(enaho_codebook_2025, "01_datos/procesados/enaho_2025_v7_codebook.parquet")
 
-# 6. Tipo de variable
+# 6. Tipo de variable ----
 tipo_variables <- tibble(
   variable = names(enaho_codebook_2025),
   tipo_r = map_chr(enaho_codebook_2025, ~ class(.x)[1])
@@ -153,3 +153,30 @@ valores_variables <- map_dfr(
     }
   }
 )
+
+# 8. Frecuencias y distribución ----
+frecuencias_variables <- enaho_codebook_2025 %>%
+  select(where(is.factor)) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "variable",
+    values_to = "categoria"
+  ) %>%
+  mutate(
+    categoria = replace_na(
+      as.character(categoria),
+      "NA (sin información)"
+    )
+  ) %>%
+  count(
+    variable,
+    categoria
+  ) %>%
+  group_by(variable) %>%
+  mutate(
+    porcentaje = round(
+      n / sum(n) * 100,
+      2
+    )
+  ) %>%
+  ungroup()
